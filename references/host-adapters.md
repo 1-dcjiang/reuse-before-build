@@ -117,3 +117,22 @@ Rules:
 | 只能读却不能写（沙箱/只读挂载） | 产出 patch 与 PR 描述文本，由用户粘贴到网页提交 |
 | 无法访问 GitHub（网络受限） | 用镜像/代理不可行时，改在国内镜像站（Gitee、npm 国内镜像、清华 PyPI 镜像）搜同类项目，并在交付中注明来源平台与星数口径不同 |
 | 目标仓库无法 clone | 用 GitHub 网页读关键文件（`raw.githubusercontent.com`）确认接口，再让用户提供本地 clone 路径继续 |
+
+## 交给宿主的本地化指令（可直接粘贴）
+
+把下面这段交给任何会读文件的 AI，让它自己把 skill 装进自己的格式；它跑完校验才算完成。
+
+```text
+你现在要为本宿主本地化 reuse-before-build。按顺序做，每步都要有可见输出：
+
+1. 对照表：这个 skill 的元素 → 本宿主的形态（frontmatter / 布局 / 语言 / 工具），一行一个。
+2. 搬运：<!-- RBB:INVARIANTS:BEGIN --> 与 <!-- RBB:INVARIANTS:END --> 之间逐字保留，不许改写、合并、精简或重新编号；只改标记外的包装。宿主要求换语言时，块照样保留，第一行加 <!-- RBB:INVARIANTS:LANG: <语言码> -->。
+3. 降级：宿主没有的能力写进 unsupported：<能力、原因、替代做法>，不要假装支持。
+4. 自检：运行 python scripts/verify_localized.py <你的副本>，把退出码和缺失项贴出来；失败就回到第 2 步，直到 PASS。
+5. 声明：文件最后一行写
+   localized: host=<名称> | kept=<原样保留项> | changed=<改动项> | unsupported=<做不到的项，没有写 none>
+
+完成定义（DoD）：verify_localized.py 退出码为 0，且声明行存在。缺一条都不算完成。
+```
+
+注意两条边界：**哈希只保得住逐字搬运**——翻译版靠 `LANG` 标记转成锚点校验，能抓住删条、改号、丢门禁，抓不住"保留关键词但把语气写软"；后者只能靠人读 `kept / changed` 那行。

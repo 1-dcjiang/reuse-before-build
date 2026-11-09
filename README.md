@@ -52,6 +52,8 @@ references/contribution-protocol.md    issue → PR flow, PR template, downgrade
 references/worked-examples.md          Join / Extend / Fork / Build deliverables + one counter-example
 references/host-adapters.md            per-host placement, rule-file names, paste-ready prompts (EN + 中文)
 scripts/repo_scan.py                   batch gh search, dedupe, flag no-license and stalled repos
+scripts/verify_localized.py            check a localized copy: invariant block, anchors, declaration
+localization.contract.json             the machine-readable contract: block hash + required anchors
 tests/test_smoke.py                    offline smoke tests: exit codes, leap-day default, table escaping
 ```
 
@@ -73,6 +75,21 @@ First block of the system prompt, plus tool notes for `web_search` / `fetch` / `
 
 **⑤ Let it localize itself**
 The skill carries a self-localization section: an agent loading it in a host with different conventions (other frontmatter keys, a flat prompt, a different language, a plugin manifest, a smaller budget) rewrites the packaging to match its own format — and keeps the rules fixed. Useful when you drop it somewhere this README never listed: it adapts instead of failing.
+
+**⑥ Check that the localization did not gut the rules**
+The parts that must survive are frozen in a delimited block (`RBB:INVARIANTS`), its SHA-256 is stored in `localization.contract.json`, and one command decides:
+
+```bash
+python scripts/verify_localized.py <localized-copy>
+```
+
+`PASS` means the block is intact (verbatim, hash matches) or, for a translated copy carrying a
+`RBB:INVARIANTS:LANG:` marker, that every semantic anchor is still present — and that the copy ends
+with the `localized: host=… | kept=… | changed=… | unsupported=…` line. Exit `1` lists exactly what
+went missing. The checker sits outside the model on purpose: a model's own "I kept all the rules" is
+not evidence.
+
+Honest limit: a full rewrite that keeps the anchors but weakens their wording still passes the anchor checks — this catches deletion and silent renumbering, not subtle rephrasing. Read the `kept` / `changed` line for that.
 
 ## Quick start
 

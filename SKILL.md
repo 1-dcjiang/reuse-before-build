@@ -13,12 +13,14 @@ Rules, not a tool. Works in any host that can read files (Claude Skills, AGENTS.
 
 ## Core rules
 
+<!-- RBB:INVARIANTS:BEGIN -->
 1. **Assume it already exists until searching proves otherwise.** Never draft a prototype first and look for references later. Order is always search → evaluate → decide → build.
 2. **The default outcome is joining an existing public repository, not creating a new one.** What the user actually wants is a working, maintained, upgradeable thing — not an orphan one-off. An upstream repo brings tests, issue tracking, release channels and users for free.
 3. **Prove non-reusability before building new.** New code requires a stated reason (license, direction conflict, abandoned upstream with no viable fork, genuinely different requirement) written in the deliverable.
 4. **Contribution must be genuinely useful.** No typo, formatting or untested-duplicate PRs. Those get closed and tag the account as a spammer.
 5. **Code gate: candidates and a first concrete action come before scaffolding.** Do not output a full new-project scaffold before you have listed 3–6 candidates and the first executable contribution action (draft issue text or PR plan).
    If a matching repo exists and you still choose to build new, the first line of the reply must be `不可复用原因 / Not reusable because: <license | direction | maintenance | requirement mismatch>`.
+<!-- RBB:INVARIANTS:END -->
 
 ## Two lanes
 
@@ -130,7 +132,12 @@ See [references/host-adapters.md](references/host-adapters.md) for the full matr
 
 A host may expect a different shape than this file ships in — another frontmatter schema, a single flat system prompt, a JSON tool definition, a different language, a plugin manifest, a shorter context budget. Adapt the packaging on first use; do not adapt the rules.
 
-**Invariants — reproduce them exactly, whatever the container:**
+**Invariants — reproduce them exactly, whatever the container:** the block between
+`<!-- RBB:INVARIANTS:BEGIN -->` and `<!-- RBB:INVARIANTS:END -->` is the canonical text, and
+`localization.contract.json` stores its SHA-256. Copy that block verbatim (hash matches →
+`verbatim` mode); if the host needs another language, keep the block delimited and add
+`<!-- RBB:INVARIANTS:LANG: <code> -->` as its first inner line (hash will not match →
+`translated` mode, judged on the semantic anchors instead). Never renumber, merge or drop a rule.
 
 - The five core rules, including the code gate and the `不可复用原因 / Not reusable because:` line.
 - Verdict order: Join → Extend → Fork → Build; Build only with a stated reason.
@@ -151,8 +158,18 @@ A host may expect a different shape than this file ships in — another frontmat
 1. **Detect** — read the host's own docs, or two of its existing skills, and list its conventions: frontmatter fields, file layout, how resources are loaded, context budget, available tools, output language.
 2. **Map** — write a short table: this skill's shape → this host's shape, one row per element you will touch.
 3. **Rewrite** — emit the localized copy. Keep the original untouched if the host allows side-by-side files, so the user can diff.
-4. **Verify** — check every invariant is present verbatim in the localized copy; if one cannot survive (no file access, no tools), mark it explicitly as `unsupported on this host` and follow the degradation table in host-adapters instead of silently dropping it.
-5. **Declare** — one line back to the user: what was localized (fields, layout, language, tool), and what was kept as-is. Never claim the local version is "the same skill" without that line.
+4. **Verify** — run `python scripts/verify_localized.py <localized-copy>`. It must print `PASS`.
+   If it fails, fix the copy and run it again; if an item genuinely cannot survive (no file access,
+   no tools), mark it explicitly as `unsupported on this host` in the declaration and follow the
+   degradation table in host-adapters — never delete it silently. The checker is outside the model
+   on purpose: your own claim that you kept the rules is not evidence.
+5. **Declare** — the last line of the file (and of your reply) must be:
+
+```
+localized: host=<name> | kept=<invariants reproduced> | changed=<packaging> | unsupported=<items + reason, or none>
+```
+
+Without that line, and without a `PASS`, the copy is not finished — and it is not "the same skill".
 
 Localization is a last-mile packaging step, not permission to rewrite the procedure. If a host's conventions force a real semantic change, say so and ask — do not ship a quietly weakened version.
 

@@ -183,5 +183,96 @@ class TestCli(unittest.TestCase):
         self.assertIn("gh 无法确认可用", proc.stderr)
 
 
+class TestVerifier(unittest.TestCase):
+    """本地化校验器：必须能抓到"偷偷削规则"，也必须放过合规副本。"""
+
+    VERIFY = os.path.join(ROOT, "scripts", "verify_localized.py")
+    SKILL = os.path.join(ROOT, "SKILL.md")
+    ZH = os.path.join(ROOT, "references", "zh-guide.md")
+    CONTRACT = os.path.join(ROOT, "localization.contract.json")
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="rbb_verify_")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def verify(self, path, *extra):
+        return subprocess.run(
+            [sys.executable, "-X", "utf8", self.VERIFY, path, *extra],
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60,
+        )
+
+    def _copy_with(self, src, mutate=None, append=""):
+        with open(src, encoding="utf-8") as fh:
+            text = fh.read()
+        if mutate:
+            text = mutate(text)
+        text += append
+        dst = os.path.join(self.tmp, os.path.basename(src))
+        with open(dst, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(text)
+        return dst
+
+    def test_canonical_skill_passes_verbatim(self):
+        p = self.verify(self.SKILL, "--canonical")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("PASS", p.stdout)
+        self.assertIn("verbatim", p.stdout)
+
+    def test_canonical_zh_passes_as_translated(self):
+        p = self.verify(self.ZH, "--canonical")
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("translated(zh)", p.stdout)
+
+    def test_contract_hash_matches_skill(self):
+        """改了 SKILL.md 的规则区却忘记更新契约时，这条会先炸。"""
+        with open(self.CONTRACT, encoding="utf-8") as fh:
+            want = json.load(fh)["block"]["canonical_sha256"]
+        p = subprocess.run(
+            [sys.executable, "-X", "utf8", self.VERIFY, "--print-hash", self.SKILL],
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60,
+        )
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertEqual(p.stdout.strip(), want)
+
+    def test_removing_the_gate_fails(self):
+        def mutate(text):
+            return "\n".join(l for l in text.splitlines()
+                             if "Not reusable because" not in l)
+
+        p = self.verify(self._copy_with(self.SKILL, mutate), "--canonical")
+        self.assertEqual(p.returncode, 1)
+        self.assertIn("gate", p.stdout)
+
+    def test_editing_inside_block_without_lang_marker_fails(self):
+        def mutate(text):
+            return text.replace("Assume it already exists", "Assume it probably exists", 1)
+
+        p = self.verify(self._copy_with(self.SKILL, mutate), "--canonical")
+        self.assertEqual(p.returncode, 1)
+        self.assertIn("invariants_hash", p.stdout)
+
+    def test_localized_copy_with_declaration_passes(self):
+        line = ("\nlocalized: host=test-host | kept=five rules, gate, verdict order, "
+                "four-part deliverable, hard constraints | changed=none | unsupported=none\n")
+        p = self.verify(self._copy_with(self.SKILL, append=line))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+
+    def test_localized_copy_without_declaration_fails(self):
+        p = self.verify(self._copy_with(self.SKILL))
+        self.assertEqual(p.returncode, 1)
+        self.assertIn("declaration", p.stdout)
+
+    def test_translated_block_without_lang_marker_fails(self):
+        def mutate(text):
+            return "\n".join(l for l in text.splitlines()
+                             if "RBB:INVARIANTS:LANG:" not in l)
+
+        p = self.verify(self._copy_with(self.ZH, mutate), "--canonical")
+        self.assertEqual(p.returncode, 1)
+        self.assertIn("invariants_hash", p.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
