@@ -1,17 +1,55 @@
 # 宿主适配：把同一套规则装进不同 AI
 
-本 skill 的规则是"意图 + 流程"，不依赖特定工具。各平台只决定两件事：**放在哪里**、**有多少字数预算**。
+本 skill 的规则是"意图 + 流程"，不依赖特定工具。任何宿主只决定两件事：**放在哪里**、**有多少字数预算**。
 
-## 各平台落位
+## 先认清四类落位
 
-| 平台 | 放在哪里 | 注意 |
+| 类型 | 典型宿主 | 怎么装 |
 |---|---|---|
-| Claude（Code / Desktop，支持 Skills） | 把整个 `reuse-before-build/` 目录放进 Skills 目录（有 `SKILL.md` 与 `references/`） | 能读文件时按 SKILL.md 走完整流程 |
-| Claude Code / Cursor 等编码代理 | 把本 skill 的核心规则写成仓库根 `CLAUDE.md` / `AGENTS.md` 的一节，或放进 `.claude/skills/` | 与"先读 CONTRIBUTING"配合最有效 |
-| ChatGPT / GPTs / Projects | 自定义指令（Custom Instructions）或项目说明，粘贴"精简版" | 单框字数有限，用精简版；完整版放知识文件 |
-| Grok | 自定义指令 / 会话首条系统提示；擅长 X 与网页搜索 | 让它先搜"是否有人做过 + 是否有人提过需求" |
-| DeepSeek / 通义 / Kimi / 豆包 等国内模型 | 系统提示或"自定义人设/提示词"；有联网搜索时先开搜索 | 中文需求容易只搜中文，务必提醒它翻成英文再搜 |
-| 任意支持函数调用的自建 Agent | 作为 system prompt 的第一段 + 工具说明（web search / gh CLI / repo 读取） | 没有工具时按"能力受限"降级 |
+| **A. Skill 目录**（能读多文件的 Agent） | Claude（Skills / Claude Code）、支持 Agent Skills 规范的宿主 | 整个 `reuse-before-build/` 目录放进 Skills 目录，自动读 `SKILL.md` 与按需读 `references/` |
+| **B. 仓库规则文件**（编码代理，读项目内约定文件） | Codex CLI、Cursor、Copilot、Gemini CLI、Windsurf、Cline、Aider、OpenHands、Trae、Qoder、Kiro、JetBrains Junie | 把「严格版」写进仓库根的 `AGENTS.md`（通用标准），或对应宿主的规则文件 |
+| **C. 聊天自定义指令**（对话式 AI，只有提示词框） | ChatGPT、Claude.ai、Gemini、Grok、Copilot Chat、Perplexity、Le Chat、豆包、DeepSeek、Kimi、通义、文心、元宝、智谱、星火、MiniMax | 粘贴「精简版」到自定义指令/系统提示；完整版可作为知识文件或项目说明上传 |
+| **D. 自建 Agent 系统提示** | LangChain / LlamaIndex / CrewAI / AutoGen / Dify / Coze / n8n / 自研 Agent | 放在 system prompt 第一段，并在工具说明里给出 `search` / `fetch` / `gh` 能力 |
+
+## B 类：规则文件对照
+
+| 宿主 | 文件 | 备注 |
+|---|---|---|
+| Codex CLI、Cursor、Jules、Amp、OpenCode、Roo Code、Zed、Gemini CLI 等 | `AGENTS.md` | **跨工具事实标准**，优先用它；放一节「先复用，再新建」即可被多数编码代理读到 |
+| Claude Code | `CLAUDE.md`（或 `.claude/skills/`） | 与 `AGENTS.md` 可同时存在，内容一致更稳 |
+| GitHub Copilot（Chat / Coding Agent） | `.github/copilot-instructions.md` | 仓库级；组织级可在 Copilot 设置里配 |
+| Cursor | `.cursor/rules/*.mdc` | 支持 frontmatter 的 `globs` / `alwaysApply` |
+| Windsurf | `.windsurf/rules/`（旧版 `.windsurfrules`） | 有字符上限，用精简版 |
+| Cline / Roo Code / Kilo Code | `.clinerules/` / `.roorules` / 自定义 instructions | 多数也读 `AGENTS.md` |
+| Continue | `.continue/rules/` 或 config 里的 `rules` | 与 IDE 内联 |
+| Aider | `CONVENTIONS.md`（用 `--read` 指定） | 也可写进 `.aider.conf.yml` 的 read 列表 |
+| Gemini CLI | `GEMINI.md`（并读 `AGENTS.md`） | 让它先用 GitHub 搜索限定符 |
+| Amazon Q Developer / Kiro | `.amazonq/rules/` / `AGENTS.md` | Kiro 用 steering 文件 |
+| JetBrains AI / Junie | `.junie/guidelines.md` / `AGENTS.md` | — |
+| Trae / Qoder / 通义灵码 / CodeGeeX / 文心 Comate / 腾讯 CodeBuddy | 各自「项目规则」入口，多数兼容 `AGENTS.md` | 找不到入口就用 `AGENTS.md` + 一次对话内粘贴 |
+
+## C 类：聊天平台落位
+
+| 平台 | 入口 | 注意 |
+|---|---|---|
+| ChatGPT | Settings → Personalization → Custom Instructions；或 GPTs 的 Instructions；Projects 的项目说明 | 单框字数有限，用精简版；完整版塞知识文件 |
+| Claude.ai | Projects 的 Project knowledge / Custom style；组织级可配 | 支持上传多文件，可整份放进去 |
+| Gemini | Gems（自定义 Gem 的指令） | 让它先做英文检索再回中文 |
+| Grok | 自定义指令 / 会话首条系统提示 | 擅长 X 与实时网页，适合查"是否已有人提过需求" |
+| Microsoft Copilot | Copilot Studio 的 agent 指令 | — |
+| Perplexity | Space 的 custom instructions | 偏检索，适合做第一轮候选发现 |
+| Mistral Le Chat | 自定义指令 / Agents | — |
+| DeepSeek | 系统提示（App 内可设"自定义提示词"） | 中文需求容易只搜中文，务必要求翻英文再搜 |
+| 豆包 | 自定义指令 / 智能体的设定 | — |
+| Kimi / 通义千问 / 文心一言 / 腾讯元宝 / 智谱清言 / 讯飞星火 / MiniMax / 阶跃 | 各自"人设/提示词/智能体设定" | 有联网开关的先开联网 |
+
+## 字数预算建议
+
+| 预算 | 用哪份 |
+|---|---|
+| ≤ 500 字 | 三句话版：先搜同类仓库 → 给 3–6 个候选打分 → 优先提 PR 加入，新建须写理由 |
+| 500–1500 字 | 「精简版（中文）」或「Condensed prompt (English)」 |
+| 无上限 / 可上传文件 | 完整 `SKILL.md` + `references/`，或把 `SKILL.md` 作为知识文件 |
 
 ## 精简版（中文，约 300 字，可直接粘贴）
 
@@ -60,5 +98,6 @@ Rules:
 | 没有联网 | 输出检索串清单 + 领域关键词 + 竞品名，要求用户提供候选链接或开启联网；禁止凭记忆断言仓库事实 |
 | 有网页但无 GitHub 登录 | 只读：仓库页、issue 页、license 文件都能看；不能提交 PR，改为产出可复制的 issue 正文与 patch |
 | 有 `gh` 但未认证 | 先 `gh auth status`，未登录时让用户执行 `gh auth login`，不要尝试代登录或读凭据 |
-| 无法访问 GitHub（网络受限） | 用镜像/代理不可行时，改在国内镜像站（Gitee、Gitee 镜像、npm 国内镜像、清华 PyPI 镜像）搜同类项目，并在交付中注明来源平台与星数口径不同 |
+| 只能读却不能写（沙箱/只读挂载） | 产出 patch 与 PR 描述文本，由用户粘贴到网页提交 |
+| 无法访问 GitHub（网络受限） | 用镜像/代理不可行时，改在国内镜像站（Gitee、npm 国内镜像、清华 PyPI 镜像）搜同类项目，并在交付中注明来源平台与星数口径不同 |
 | 目标仓库无法 clone | 用 GitHub 网页读关键文件（`raw.githubusercontent.com`）确认接口，再让用户提供本地 clone 路径继续 |

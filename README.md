@@ -4,7 +4,11 @@
 
 A skill for AI coding assistants: **search for existing open-source implementations first, and contribute upstream instead of building a new one from scratch.**
 
-适用于 Claude（Skills / Claude Code）、ChatGPT（Custom Instructions / GPTs / Projects）、Grok、DeepSeek、通义、Kimi、豆包，以及任何能吃 system prompt 的 Agent。
+**编码代理**：Claude Code · Codex CLI · Cursor · GitHub Copilot · Gemini CLI · Windsurf · Cline · Roo Code · Kilo Code · Continue · Aider · OpenHands · Amp · Zed · JetBrains Junie · Amazon Q / Kiro · Trae · Qoder · 通义灵码 · CodeGeeX · 文心 Comate · 腾讯 CodeBuddy（走 `AGENTS.md` / `CLAUDE.md` / `.cursor/rules` 等仓库规则文件）
+
+**对话式 AI**：ChatGPT · Claude.ai · Gemini · Grok · Microsoft Copilot · Perplexity · Mistral Le Chat · DeepSeek · 豆包 · Kimi · 通义千问 · 文心一言 · 腾讯元宝 · 智谱清言 · 讯飞星火 · MiniMax · 阶跃（走自定义指令 / 系统提示）
+
+**自建 Agent**：LangChain · LlamaIndex · CrewAI · AutoGen · Dify · Coze · n8n 及任何能吃 system prompt 的 Agent。
 
 ---
 
@@ -50,11 +54,19 @@ scripts/repo_scan.py                   一键粗筛：gh search 批量跑、去�
 
 ## 安装
 
-**Claude（支持 Skills 的环境）**：把整个目录放进 Skills 目录即可，`SKILL.md` 的 frontmatter 会被自动读取。
+四种落位，按宿主自选。完整的平台清单、规则文件名对照、字数预算见 [references/host-adapters.md](references/host-adapters.md)。
 
-**Claude Code / Cursor / Codex 等编码代理**：把 `SKILL.md` 的核心规则写进仓库根的 `AGENTS.md` / `CLAUDE.md`，或放进 `.claude/skills/reuse-before-build/`。
+**① Skill 目录**（Claude / 支持 Agent Skills 规范的宿主）
+把整个目录放进 Skills 目录即可，`SKILL.md` 的 frontmatter 会被自动读取，`references/` 按需加载。
 
-**ChatGPT / Grok / DeepSeek / 豆包等只能吃提示词的宿主**：打开 `references/host-adapters.md`，复制其中的「精简版（中文）」或「English condensed prompt」到自定义指令；完整版可作为知识文件上传。
+**② 仓库规则文件**（编码代理：Codex CLI / Cursor / Copilot / Gemini CLI / Windsurf / Cline / Aider / Trae / Qoder / Junie …）
+把 `references/host-adapters.md` 的「严格版」写进仓库根 `AGENTS.md`（跨工具事实标准）；Claude Code 用 `CLAUDE.md`，Copilot 用 `.github/copilot-instructions.md`，Cursor 用 `.cursor/rules/*.mdc`，Windsurf 用 `.windsurf/rules/`。
+
+**③ 自定义指令**（ChatGPT / Claude.ai / Gemini / Grok / DeepSeek / 豆包 / Kimi / 通义 / 文心 / 元宝 / 智谱 / 星火 / MiniMax …）
+复制「精简版（中文）」或「Condensed prompt (English)」进设置里的自定义指令；有知识文件/项目说明的（ChatGPT Projects、Claude Projects、Gemini Gems）把完整版一起传上去。
+
+**④ 自建 Agent**（LangChain / LlamaIndex / CrewAI / AutoGen / Dify / Coze / n8n）
+放 system prompt 第一段，并在工具说明里给出 `web_search` / `fetch` / `gh` 能力；无工具时走 skill 里的「能力受限」降级。
 
 ## 快速开始
 

@@ -1,6 +1,6 @@
 ---
 name: reuse-before-build
-description: 在动手写任何新程序、脚本、库、工具、插件或服务之前，先搜索是否已存在同类型或同一想法的公开项目（尤其是 GitHub 开源仓库），并优先通过提交 Issue、PR、插件、翻译、测试等方式加入那个公开仓库、成为公共贡献者，而不是从零复制一个新项目。适用于这些请求：「帮我写一个…工具/脚本/爬虫/插件/库/机器人/服务」「做一个和 X 一样的程序」「有没有现成的」「从零实现一个…」；英文触发词 build me a tool、write a script that、create a new app/lib/bot、implement X from scratch、is there an existing open-source project、contribute to an open-source repo、upstream this fix、open a PR。当用户明确要求私有、闭源、不得外传，或已有代码许可不允许再分发时不要走本流程。
+description: 在动手写任何新程序、脚本、库、工具、插件或服务之前，先搜索是否已存在同类型或同一想法的公开项目（尤其是 GitHub 开源仓库），并优先通过提交 Issue、PR、插件、翻译、测试等方式加入那个公开仓库、成为公共贡献者，而不是从零复制一个新项目。适用于这些请求：「帮我写一个…工具/脚本/爬虫/插件/库/机器人/服务」「做一个和 X 一样的程序」「有没有现成的」「从零实现一个…」；英文触发词 build me a tool、write a script that、create a new app/lib/bot、implement X from scratch、is there an existing open-source project、contribute to an open-source repo、upstream this fix、open a PR。宿主不限：Claude Skills / Claude Code / CLAUDE.md、Codex CLI / Cursor / Copilot / Gemini CLI / Windsurf / Cline / Aider / Trae / Qoder / Junie 的 AGENTS.md 与规则文件、ChatGPT 自定义指令与 Projects、Claude.ai Projects、Gemini Gems、Grok、DeepSeek、豆包、Kimi、通义千问、文心一言、腾讯元宝、智谱清言、讯飞星火的自定义指令，以及 LangChain / Dify / Coze 等自建 Agent 的 system prompt。当用户明确要求私有、闭源、不得外传，或已有代码许可不允许再分发时不要走本流程。
 ---
 
 # 先复用，再新建
@@ -101,7 +101,16 @@ python scripts/repo_scan.py "video highlight clip" "auto cut shorts" --stars 100
 
 ## 平台适配
 
-不同宿主（Claude / ChatGPT / Grok / DeepSeek / 豆包 / 其他）的能力与注入方式不同：见 [references/host-adapters.md](references/host-adapters.md)，其中含可直接粘贴的精简系统提示（中文版与英文版）。移植到没有文件系统的宿主时，只保留 SKILL.md 的核心规则与四步流程即可。
+宿主只决定两件事：**放在哪里**、**有多少字数预算**。四类落位：
+
+| 类型 | 宿主 | 落位 |
+|---|---|---|
+| Skill 目录 | Claude / 支持 Agent Skills 规范的宿主 | 整个目录进 Skills 目录，按需读 `references/` |
+| 仓库规则文件 | Codex CLI、Cursor、Copilot、Gemini CLI、Windsurf、Cline、Roo/Kilo、Continue、Aider、OpenHands、Amp、Zed、Junie、Amazon Q/Kiro、Trae、Qoder、通义灵码、CodeGeeX、文心 Comate、腾讯 CodeBuddy | `AGENTS.md` 优先，其次 `CLAUDE.md` / `.github/copilot-instructions.md` / `.cursor/rules` 等 |
+| 聊天自定义指令 | ChatGPT、Claude.ai、Gemini、Grok、Copilot、Perplexity、Le Chat、DeepSeek、豆包、Kimi、通义、文心、元宝、智谱、星火、MiniMax、阶跃 | 粘贴精简版；支持知识文件的上传完整版 |
+| 自建 Agent | LangChain、LlamaIndex、CrewAI、AutoGen、Dify、Coze、n8n | system prompt 第一段 + 工具说明 |
+
+完整的平台清单、规则文件名对照、字数预算、中英文可粘贴提示见 [references/host-adapters.md](references/host-adapters.md)。移植到没有文件系统的宿主时，只保留本节规则与四步流程即可。
 
 ## 输出示例
 
