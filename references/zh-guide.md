@@ -74,7 +74,7 @@ python scripts/repo_scan.py "video highlight clip" "auto cut shorts" --stars 100
 
 ## 第 4 步：交付
 
-给用户的回复必须包含这四段，缺一不可：
+**完整档**给用户的回复必须包含这四段，缺一不可（快速档用上面那三行，不走这个模板）：
 
 ```markdown
 ## 找到了什么

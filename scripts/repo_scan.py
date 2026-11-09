@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -79,7 +80,12 @@ def gh_json(args: list[str], timeout: int = 60) -> list[dict]:
     if proc.returncode != 0:
         raise RuntimeError(f"gh 失败（exit {proc.returncode}）：{proc.stderr.strip()[:300]}")
     out = proc.stdout.strip()
-    return json.loads(out) if out else []
+    if not out:
+        return []
+    try:
+        return json.loads(out)
+    except ValueError as exc:
+        raise RuntimeError(f"gh 输出不是 JSON（{exc}）：{out[:200]}") from None
 
 
 def scan(keyword: str, stars: int, updated_since: str, limit: int) -> tuple[list[dict], bool]:
@@ -125,10 +131,16 @@ def license_flags(license_obj: dict | None) -> tuple[int, str]:
 
 
 def auth_ok() -> tuple[bool, str]:
-    """先查登录态：未登录时搜索会失败，提前给出可执行的修复提示。"""
+    """先查登录态：未登录时搜索会失败，提前给出可执行的修复提示。
+
+    只查检索要用的那一个 host（GH_HOST 优先，否则 github.com）：`gh auth status`
+    在任一已配置 host 失效时会整体返回非零，不限定 host 会把"另一个企业域名掉线"
+    误报成本仓库不可用。
+    """
+    host = os.environ.get("GH_HOST") or "github.com"
     try:
         proc = subprocess.run(
-            ["gh", "auth", "status"],
+            ["gh", "auth", "status", "-h", host],
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -142,8 +154,31 @@ def auth_ok() -> tuple[bool, str]:
         return False, "`gh auth status` 超时（>30s）"
     if proc.returncode != 0:
         detail = (proc.stderr or proc.stdout or "").strip().splitlines()
-        return False, detail[0][:200] if detail else "gh auth status 返回非零"
+        return False, f"{host}：{detail[0][:200] if detail else 'gh auth status 返回非零'}"
     return True, ""
+
+
+def render_table(rows: list[dict]) -> str:
+    header = "| 仓库 | ★ | 最近推送 | 语言 | 许可 | open issues | 命中关键词 | URL |"
+    sep = "|---|---|---|---|---|---|---|---|"
+    lines = [header, sep]
+    for row in rows:
+        pushed = (row.get("pushedAt") or "")[:10] or "-"
+        if row["_activity"] == 0:
+            pushed = f"{pushed} ⚠停滞"
+        lines.append(
+            "| {name} | {stars} | {pushed} | {lang} | {lic} | {issues} | {kw} | {url} |".format(
+                name=md_cell(row.get("full_name")),
+                stars=md_cell(row.get("stargazersCount") or 0),
+                pushed=md_cell(pushed),
+                lang=md_cell(row.get("language")),
+                lic=md_cell(row["_lic_label"]),
+                issues=md_cell(row.get("openIssuesCount")),
+                kw=md_cell(", ".join(row.get("matched_keyword") or [])),
+                url=md_cell(row.get("url")),
+            )
+        )
+    return "\n".join(lines)
 
 
 def main() -> int:
@@ -199,31 +234,14 @@ def main() -> int:
 
     rows.sort(key=lambda r: (-r["_lic_score"], -r["_activity"], -(r.get("stargazersCount") or 0)))
 
-    header = "| 仓库 | ★ | 最近推送 | 语言 | 许可 | open issues | 命中关键词 | URL |"
-    sep = "|---|---|---|---|---|---|---|---|"
-    lines = [header, sep]
-    for row in rows:
-        pushed = (row.get("pushedAt") or "")[:10] or "-"
-        if row["_activity"] == 0:
-            pushed = f"{pushed} ⚠停滞"
-        lines.append(
-            "| {name} | {stars} | {pushed} | {lang} | {lic} | {issues} | {kw} | {url} |".format(
-                name=md_cell(row.get("full_name")),
-                stars=md_cell(row.get("stargazersCount") or 0),
-                pushed=md_cell(pushed),
-                lang=md_cell(row.get("language")),
-                lic=md_cell(row["_lic_label"]),
-                issues=md_cell(row.get("openIssuesCount")),
-                kw=md_cell(", ".join(row.get("matched_keyword") or [])),
-                url=md_cell(row.get("url")),
-            )
-        )
-
-    table = "\n".join(lines)
+    table = render_table(rows)
     print(table)
 
     if failed and len(failed) == len(args.keywords):
         print(f"AUTH/网络问题：{len(failed)} 个关键词全部检索失败。{FAIL_HINT}", file=sys.stderr)
+        if args.md_out or args.json_out:
+            print("检索失败，未写出 --md-out / --json-out（没有可用结果，避免空的候选表被当成'查过了'）。",
+                  file=sys.stderr)
         return 3
 
     if failed:

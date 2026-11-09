@@ -82,7 +82,7 @@ If rejected or ignored for long, downgrade to Extend/Fork per the verdict table.
 
 ## Step 4 — Deliver
 
-Every reply must contain all four parts:
+Every **full-lane** reply must contain all four parts (the quick lane uses the three-line form above):
 
 ```markdown
 ## What I found

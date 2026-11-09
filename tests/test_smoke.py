@@ -7,11 +7,16 @@
 
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
+import io
+import json
 import os
+import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -52,13 +57,73 @@ class TestHelpers(unittest.TestCase):
     def test_default_since_normal_date(self):
         self.assertEqual(repo_scan.default_since(dt.date(2026, 11, 9)), "2025-11-09")
 
-    def test_table_row_uses_escaped_cells(self):
-        row = {"full_name": "a/b|c", "stargazersCount": 3, "license": {"key": "mit"},
-               "pushedAt": "2026-01-01T00:00:00Z", "language": "Python",
-               "openIssuesCount": 1, "url": "https://x", "matched_keyword": ["k|w"]}
-        row["_activity"] = repo_scan.activity_points(row["pushedAt"])
-        row["_lic_score"], row["_lic_label"] = repo_scan.license_flags(row["license"])
-        self.assertEqual(repo_scan.md_cell(", ".join(row["matched_keyword"])), "k\\|w")
+    def test_render_table_escapes_every_cell(self):
+        row = {
+            "full_name": "a/b|c", "stargazersCount": 3, "license": {"key": "mit"},
+            "pushedAt": "2026-01-01T00:00:00Z", "language": "Py\nthon",
+            "openIssuesCount": 1, "url": "https://x|y", "matched_keyword": ["k|w"],
+            "_activity": 2, "_lic_label": "MIT",
+        }
+        lines = repo_scan.render_table([row]).splitlines()
+        self.assertEqual(len(lines), 3, "表头 + 分隔行 + 1 行数据")
+        for line in lines:
+            # 未被反斜杠转义的竖线才是列分隔符，必须正好 9 个（8 列）
+            self.assertEqual(len(re.findall(r"(?<!\\)\|", line)), 9, f"列数被破坏：{line}")
+        self.assertIn("a/b\\|c", lines[2])
+
+    def test_render_table_stalled_marker(self):
+        row = {
+            "full_name": "a/b", "stargazersCount": 1, "pushedAt": "2024-01-01T00:00:00Z",
+            "language": "Go", "openIssuesCount": 0, "url": "https://x",
+            "matched_keyword": ["k"], "_activity": 0, "_lic_label": "MIT",
+        }
+        self.assertIn("⚠停滞", repo_scan.render_table([row]))
+
+
+class TestOutputs(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="rbb_test_")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _run_stubbed(self, keywords, extra_args, scan_result):
+        old_argv, old_auth, old_scan = sys.argv, repo_scan.auth_ok, repo_scan.scan
+        try:
+            repo_scan.auth_ok = lambda: (True, "")
+            repo_scan.scan = lambda kw, s, u, l: scan_result
+            sys.argv = [SCRIPT, *keywords, *extra_args]
+            err, out = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
+                code = repo_scan.main()
+        finally:
+            sys.argv, repo_scan.auth_ok, repo_scan.scan = old_argv, old_auth, old_scan
+        return code, out.getvalue(), err.getvalue()
+
+    def test_md_and_json_out_are_written(self):
+        row = {"full_name": "o/r", "stargazersCount": 9, "pushedAt": "2026-11-01T00:00:00Z",
+               "license": {"key": "mit"}, "language": "Rust", "openIssuesCount": 2,
+               "url": "https://github.com/o/r", "matched_keyword": "kw"}
+        md = os.path.join(self.tmp, "c.md")
+        js = os.path.join(self.tmp, "c.json")
+        code, out, _ = self._run_stubbed(["kw"], ["--md-out", md, "--json-out", js], ([row], True))
+        self.assertEqual(code, 0)
+        self.assertTrue(os.path.exists(md))
+        with open(md, encoding="utf-8") as fh:
+            self.assertIn("o/r", fh.read())
+        with open(js, encoding="utf-8") as fh:
+            data = json.load(fh)
+        self.assertEqual(data[0]["full_name"], "o/r")
+        self.assertIn("_lic_score", data[0])
+
+    def test_no_files_written_on_rc3(self):
+        md = os.path.join(self.tmp, "c.md")
+        js = os.path.join(self.tmp, "c.json")
+        code, _, err = self._run_stubbed(["kw"], ["--md-out", md, "--json-out", js], ([], False))
+        self.assertEqual(code, 3)
+        self.assertFalse(os.path.exists(md))
+        self.assertFalse(os.path.exists(js))
+        self.assertIn("未写出", err)
 
 
 class TestCli(unittest.TestCase):
