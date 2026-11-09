@@ -27,7 +27,15 @@ Rules, not a tool. Works in any host that can read files (Claude Skills, AGENTS.
 | **Quick** | One-off script, single-file tool, throwaway automation | 3 search strings (English feature words + `awesome <domain>` + `<feature> alternative`), read the top 5 results; extend an existing project or cite it; write only if nothing matches | 1–2 min |
 | **Full** | New library / plugin / service / long-lived project, or quick lane found a match | The four steps below + six-dimension scoring + contribution path | 10–30 min |
 
-The quick lane trims scoring and the contribution workflow — never the "has anyone done this" question.
+The quick lane trims scoring and the contribution workflow — never the "has anyone done this" question. Its reply is three lines, not the four-part template:
+
+```
+Reused: <repo> (<license>, <stars>) — <one line on why it fits>
+Change: <what I will do in that repo / what I will call from it>
+Risk: <what breaks if it is wrong>
+```
+
+If nothing matched, say so in one line and name the searches you ran, so the user can see the negative result instead of trusting it.
 
 ## Step 1 — Discover
 
@@ -102,6 +110,7 @@ Any of these justifies building new, with the reason in the deliverable:
 - **Never open a PR without reading CONTRIBUTING**, never bypass the PR template, never force-push to someone else's branch.
 - **Never use "AI generated it" as a reason to merge**, never fire near-identical PRs at many repos at once.
 - **Never paste the user's private code into a public issue or PR.** Minimise and sanitise reproductions.
+- **No public write without per-action confirmation.** Opening an issue, a PR or a comment is public and hard to retract — it is not covered by "the skill told me to contribute". Draft the exact body (and the diff, for a PR) and get the user's explicit go-ahead for that one action, every time. An authenticated `gh` with `repo` scope is not permission.
 - Do not perform irreversible external actions on the user's behalf (publish, merge, release). Hand the diff and description over for confirmation.
 
 ## Hosts

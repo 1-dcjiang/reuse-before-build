@@ -52,6 +52,7 @@ references/contribution-protocol.md    issue → PR flow, PR template, downgrade
 references/worked-examples.md          Join / Extend / Fork / Build deliverables + one counter-example
 references/host-adapters.md            per-host placement, rule-file names, paste-ready prompts (EN + 中文)
 scripts/repo_scan.py                   batch gh search, dedupe, flag no-license and stalled repos
+tests/test_smoke.py                    offline smoke tests: exit codes, leap-day default, table escaping
 ```
 
 ## Install
@@ -90,6 +91,12 @@ python scripts/repo_scan.py "video highlight clip" "auto cut shorts" --stars 100
 Then open each repo, read `CONTRIBUTING` and the recently merged PRs, and score with `references/repo-triage.md`.
 
 No `gh` / no network: `references/discovery-playbook.md` has copy-pasteable GitHub search strings and the degradation rules (never invent stars or licenses from memory).
+
+Exit codes are deliberate: `2` = gh unusable (missing / not signed in / host unreachable), `3` = gh works but every search failed, `0` = searches ran (a `0 hit` result is reported as *no match found*, never as *nothing exists*). Check the script without network:
+
+```bash
+python -m unittest discover -s tests -v
+```
 
 ## Three red lines
 
