@@ -85,9 +85,11 @@ python scripts/verify_localized.py <localized-copy>
 
 `PASS` means the block is intact — either verbatim (hash matches, so any edit is caught) or, for a
 translated copy carrying a `RBB:INVARIANTS:LANG:` marker, that the block still holds exactly 1..5
-numbered rules, each rule's anchor survives, all six skill-level anchors survive, and the copy ends
-with the `localized: host=… | kept=… | changed=… | unsupported=…` line (tolerating up to 8 trailing
-non-empty lines for a copyright footer). Exit `1` lists exactly what went missing.
+numbered rules (only column-0 numbering counts, so indented sub-items don't confuse it), each rule's
+anchor survives, all six skill-level anchors survive, and the copy ends with the
+`localized: host=… | kept=… | changed=… | unsupported=…` line (tolerating up to 8 trailing non-empty
+lines for a copyright footer). The block is located outside code fences, so a fenced demo of the
+markers earlier in the file cannot hijack it. Exit `1` lists exactly what went missing.
 
 Run acceptance **without any flag**: `--canonical` only works on the two reference files listed in
 the contract, and is refused (`rc 2`) for any other path — a localized copy cannot exempt itself from

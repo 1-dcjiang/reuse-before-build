@@ -42,19 +42,35 @@ def read_text(path: str) -> str:
         return fh.read()
 
 
-def _marker_re(marker: str) -> re.Pattern:
-    """整行锚定：说明文字里的反引号提及不算块边界。"""
-    return re.compile(rf"^<!--\s*{re.escape(marker)}\s*-->\s*$", re.MULTILINE)
+def _marker_line(line: str, marker: str) -> bool:
+    """整行锚定：说明文字或反引号里的提及不算块边界。"""
+    return re.fullmatch(rf"<!--\s*{re.escape(marker)}\s*-->", line.strip()) is not None
 
 
 def extract_block(text: str, begin: str, end: str) -> str | None:
-    b = _marker_re(begin).search(text)
-    if not b:
+    """取不变块。跳过代码围栏里的"标记示例"，并在多个候选里选规则最全的那个。"""
+    lines = text.splitlines()
+    fenced: list[bool] = []
+    in_fence = False
+    for line in lines:
+        if line.strip().startswith("```"):
+            in_fence = not in_fence
+            fenced.append(True)
+            continue
+        fenced.append(in_fence)
+
+    begins = [i for i, l in enumerate(lines) if not fenced[i] and _marker_line(l, begin)]
+    ends = [i for i, l in enumerate(lines) if not fenced[i] and _marker_line(l, end)]
+    candidates: list[str] = []
+    for b in begins:
+        e = next((x for x in ends if x > b), None)
+        if e is None:
+            continue
+        candidates.append("\n".join(lines[b + 1:e]).strip())
+    if not candidates:
         return None
-    e = _marker_re(end).search(text, b.end())
-    if not e:
-        return None
-    return text[b.end():e.start()].strip()
+    # 演示用的空块/占位块排在前面时，别让它顶替真块
+    return max(candidates, key=lambda c: (len(RULE_RE.findall(c)), -candidates.index(c)))
 
 
 def block_hash(inner: str) -> str:
@@ -67,7 +83,7 @@ def find_lang_marker(inner: str, prefix: str) -> str | None:
     return m.group(1) if m else None
 
 
-RULE_RE = re.compile(r"^\s*(\d+)\.\s+\S", re.MULTILINE)
+RULE_RE = re.compile(r"^(\d+)\.\s+\S", re.MULTILINE)  # 只认第 0 列的编号，缩进子项不算规则
 
 
 def check_rules(inner: str, rules_min: int) -> tuple[list[str], list[str], list[int]]:

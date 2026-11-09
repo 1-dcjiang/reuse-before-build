@@ -311,6 +311,22 @@ class TestVerifier(unittest.TestCase):
         p = self.verify(self._copy_with(self.SKILL, append=self.DECL + "© 2026 someone\n"))
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
 
+    def test_marker_fence_demo_before_the_real_block_is_ignored(self):
+        """前面用代码围栏演示一对标记时，不能把示例当真理块。"""
+        demo = "```markdown\n<!-- RBB:INVARIANTS:BEGIN -->\n1. demo rule\n<!-- RBB:INVARIANTS:END -->\n```\n\n"
+        p = self.verify(self._copy_with(self.SKILL, lambda t: demo + t, self.DECL))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("verbatim", p.stdout)
+
+    def test_indented_sub_items_are_not_counted_as_rules(self):
+        def mutate(text):
+            return text.replace("4. **贡献必须真的有用",
+                                "4. **贡献必须真的有用**\n   1. 子项甲\n   2. 子项乙", 1)
+
+        p = self.verify(self._copy_with(self.ZH, mutate, self.DECL))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("translated(zh)", p.stdout)
+
     def test_marker_mentioned_in_prose_does_not_shift_the_block(self):
         """说明文字里提到标记名时，块边界仍按整行锚定，不会切错区间。"""
         prose = "说明：块用 `<!-- RBB:INVARIANTS:BEGIN -->` 与 `<!-- RBB:INVARIANTS:END -->` 圈住。\n\n"
