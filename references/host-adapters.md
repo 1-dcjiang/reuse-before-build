@@ -15,18 +15,23 @@
 
 | 宿主 | 文件 | 备注 |
 |---|---|---|
-| Codex CLI、Cursor、Jules、Amp、OpenCode、Roo Code、Zed、Gemini CLI 等 | `AGENTS.md` | **跨工具事实标准**，优先用它；放一节「先复用，再新建」即可被多数编码代理读到 |
+| Codex CLI、Cursor、Jules、Amp、OpenCode、Zed、Cline、Junie 等 | `AGENTS.md` | **跨工具事实标准**，优先用它；放一节「先复用，再新建」即可被多数编码代理读到 |
 | Claude Code | `CLAUDE.md`（或 `.claude/skills/`） | 与 `AGENTS.md` 可同时存在，内容一致更稳 |
 | GitHub Copilot（Chat / Coding Agent） | `.github/copilot-instructions.md` | 仓库级；组织级可在 Copilot 设置里配 |
-| Cursor | `.cursor/rules/*.mdc` | 支持 frontmatter 的 `globs` / `alwaysApply` |
-| Windsurf | `.windsurf/rules/`（旧版 `.windsurfrules`） | 有字符上限，用精简版 |
-| Cline / Roo Code / Kilo Code | `.clinerules/` / `.roorules` / 自定义 instructions | 多数也读 `AGENTS.md` |
-| Continue | `.continue/rules/` 或 config 里的 `rules` | 与 IDE 内联 |
-| Aider | `CONVENTIONS.md`（用 `--read` 指定） | 也可写进 `.aider.conf.yml` 的 read 列表 |
-| Gemini CLI | `GEMINI.md`（并读 `AGENTS.md`） | 让它先用 GitHub 搜索限定符 |
-| Amazon Q Developer / Kiro | `.amazonq/rules/` / `AGENTS.md` | Kiro 用 steering 文件 |
-| JetBrains AI / Junie | `.junie/guidelines.md` / `AGENTS.md` | — |
+| Cursor | `.cursor/rules/*.mdc` | MDC = Markdown + frontmatter，可用 `alwaysApply` / `globs` 控制生效范围 |
+| Windsurf（Cascade） | `.windsurf/rules/*.md` | 工作区及其子目录、父目录都会被读取；旧版 `.windsurfrules` |
+| Cline | `.clinerules/` 或 `.cline/rules/` | 也读全局 `AGENTS.md` |
+| Roo Code | `.roorules` / `.roo/rules/`（`.roo/rules-code/` 等按模式分） | — |
+| Kilo Code | `.kilocode/rules/`（新版走 `kilo.jsonc` 的 `instructions` 或 `.kilo/rules/`） | 与 Roo 是近亲，路径随版本变，装前看官方文档 |
+| Continue | `.continue/rules/` 或 config 的 `rules` | 与 IDE 内联 |
+| Aider | `CONVENTIONS.md`，用 `--read` 指定（或写进 `.aider.conf.yml`） | 默认不自动读，必须显式给 |
+| Gemini CLI | `GEMINI.md` | 部分版本也读 `AGENTS.md` |
+| Kiro | `.kiro/steering/*.md`（自定义 agent 需在 `resources` 里显式列 glob） | steering 文件默认自动加载 |
+| Amazon Q Developer | `.amazonq/rules/` | — |
+| JetBrains AI / Junie | `.junie/guidelines.md` | 也读 `AGENTS.md` |
 | Trae / Qoder / 通义灵码 / CodeGeeX / 文心 Comate / 腾讯 CodeBuddy | 各自「项目规则」入口，多数兼容 `AGENTS.md` | 找不到入口就用 `AGENTS.md` + 一次对话内粘贴 |
+
+> 这类路径随版本调整，落地前在宿主官方文档里确认一次；确认成本远低于装错位置后"看起来没生效"的排查成本。
 
 ## C 类：聊天平台落位
 
