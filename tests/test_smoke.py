@@ -241,7 +241,7 @@ class TestVerifier(unittest.TestCase):
             return "\n".join(l for l in text.splitlines()
                              if "Not reusable because" not in l)
 
-        p = self.verify(self._copy_with(self.SKILL, mutate), "--canonical")
+        p = self.verify(self._copy_with(self.SKILL, mutate, self.DECL))
         self.assertEqual(p.returncode, 1)
         self.assertIn("gate", p.stdout)
 
@@ -249,7 +249,7 @@ class TestVerifier(unittest.TestCase):
         def mutate(text):
             return text.replace("Assume it already exists", "Assume it probably exists", 1)
 
-        p = self.verify(self._copy_with(self.SKILL, mutate), "--canonical")
+        p = self.verify(self._copy_with(self.SKILL, mutate, self.DECL))
         self.assertEqual(p.returncode, 1)
         self.assertIn("invariants_hash", p.stdout)
 
@@ -269,9 +269,54 @@ class TestVerifier(unittest.TestCase):
             return "\n".join(l for l in text.splitlines()
                              if "RBB:INVARIANTS:LANG:" not in l)
 
-        p = self.verify(self._copy_with(self.ZH, mutate), "--canonical")
+        p = self.verify(self._copy_with(self.ZH, mutate, self.DECL))
         self.assertEqual(p.returncode, 1)
         self.assertIn("invariants_hash", p.stdout)
+
+    DECL = ("\nlocalized: host=test | kept=all | changed=packaging | unsupported=none\n")
+
+    def test_deleting_a_rule_fails_in_translated_mode(self):
+        """翻译模式不能靠"只比 6 个锚点"混过删条这一关。"""
+        def mutate(text):
+            return "\n".join(l for l in text.splitlines()
+                             if "默认目标是加入已有公开仓库" not in l)
+
+        p = self.verify(self._copy_with(self.ZH, mutate, self.DECL))
+        self.assertEqual(p.returncode, 1)
+        self.assertIn("rules_count", p.stdout)
+        self.assertIn("rule:rule_2", p.stdout)
+
+    def test_renumbering_fails(self):
+        def mutate(text):
+            return text.replace("4. **贡献必须真的有用", "6. **贡献必须真的有用", 1)
+
+        p = self.verify(self._copy_with(self.ZH, mutate, self.DECL))
+        self.assertEqual(p.returncode, 1)
+        self.assertIn("rules_numbering", p.stdout)
+
+    def test_softening_a_rule_title_fails(self):
+        def mutate(text):
+            return text.replace("贡献必须真的有用", "贡献应当有价值", 1)
+
+        p = self.verify(self._copy_with(self.ZH, mutate, self.DECL))
+        self.assertEqual(p.returncode, 1)
+        self.assertIn("rule:rule_4", p.stdout)
+
+    def test_canonical_is_refused_outside_the_package(self):
+        p = self.verify(self._copy_with(self.SKILL, append=self.DECL), "--canonical")
+        self.assertEqual(p.returncode, 2)
+        self.assertIn("REFUSED", p.stderr)
+
+    def test_footer_after_declaration_still_passes(self):
+        p = self.verify(self._copy_with(self.SKILL, append=self.DECL + "© 2026 someone\n"))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+
+    def test_marker_mentioned_in_prose_does_not_shift_the_block(self):
+        """说明文字里提到标记名时，块边界仍按整行锚定，不会切错区间。"""
+        prose = "说明：块用 `<!-- RBB:INVARIANTS:BEGIN -->` 与 `<!-- RBB:INVARIANTS:END -->` 圈住。\n\n"
+        p = self.verify(self._copy_with(self.SKILL, lambda t: prose + t, self.DECL))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("verbatim", p.stdout)
 
 
 if __name__ == "__main__":

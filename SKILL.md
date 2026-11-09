@@ -142,6 +142,7 @@ A host may expect a different shape than this file ships in — another frontmat
 - The five core rules, including the code gate and the `不可复用原因 / Not reusable because:` line.
 - Verdict order: Join → Extend → Fork → Build; Build only with a stated reason.
 - The four-part deliverable (found / why / what I will add / alternatives and risks).
+- The quick-lane three-line form (`Reused` / `Change` / `Risk`) whenever the quick lane is used.
 - The hard constraints, especially: never invent repos, stars or licenses; never PR without reading CONTRIBUTING; never paste private code in public.
 
 **Free to change — these are formatting, not meaning:**
@@ -163,7 +164,8 @@ A host may expect a different shape than this file ships in — another frontmat
    no tools), mark it explicitly as `unsupported on this host` in the declaration and follow the
    degradation table in host-adapters — never delete it silently. The checker is outside the model
    on purpose: your own claim that you kept the rules is not evidence.
-5. **Declare** — the last line of the file (and of your reply) must be:
+5. **Declare** — the last non-empty line of the file, outside any code fence (a trailing copyright or
+   generation-time footer is tolerated), and the last line of your reply, must be:
 
 ```
 localized: host=<name> | kept=<invariants reproduced> | changed=<packaging> | unsupported=<items + reason, or none>

@@ -83,13 +83,20 @@ The parts that must survive are frozen in a delimited block (`RBB:INVARIANTS`), 
 python scripts/verify_localized.py <localized-copy>
 ```
 
-`PASS` means the block is intact (verbatim, hash matches) or, for a translated copy carrying a
-`RBB:INVARIANTS:LANG:` marker, that every semantic anchor is still present — and that the copy ends
-with the `localized: host=… | kept=… | changed=… | unsupported=…` line. Exit `1` lists exactly what
-went missing. The checker sits outside the model on purpose: a model's own "I kept all the rules" is
-not evidence.
+`PASS` means the block is intact — either verbatim (hash matches, so any edit is caught) or, for a
+translated copy carrying a `RBB:INVARIANTS:LANG:` marker, that the block still holds exactly 1..5
+numbered rules, each rule's anchor survives, all six skill-level anchors survive, and the copy ends
+with the `localized: host=… | kept=… | changed=… | unsupported=…` line (tolerating up to 8 trailing
+non-empty lines for a copyright footer). Exit `1` lists exactly what went missing.
 
-Honest limit: a full rewrite that keeps the anchors but weakens their wording still passes the anchor checks — this catches deletion and silent renumbering, not subtle rephrasing. Read the `kept` / `changed` line for that.
+Run acceptance **without any flag**: `--canonical` only works on the two reference files listed in
+the contract, and is refused (`rc 2`) for any other path — a localized copy cannot exempt itself from
+the declaration check. The checker sits outside the model on purpose: a model's own "I kept all the
+rules" is not evidence.
+
+Honest limit: it catches deletion, renumbering, a dropped rule, a missing declaration, and a hash
+mismatch disguised as verbatim. It does **not** catch a rewrite that keeps every rule title and anchor
+but softens the wording ("should consider" for "must"). Read the `kept` / `changed` line for that.
 
 ## Quick start
 

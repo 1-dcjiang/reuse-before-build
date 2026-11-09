@@ -121,6 +121,7 @@ python scripts/repo_scan.py "video highlight clip" "auto cut shorts" --stars 100
 - 五条核心规则，包括门禁，以及 `不可复用原因 / Not reusable because:` 那一行。
 - 结论顺序：Join → Extend → Fork → Build；Build 必须写明理由。
 - 四段交付（找到了什么 / 为什么选它 / 我要加什么 / 备选与风险）。
+- 快速档的三行格式（`复用` / `改动` / `风险`），用到快速档时必须保留。
 - 硬约束，尤其是：不虚构仓库与 star 数、不读 CONTRIBUTING 不提 PR、不把私有代码贴到公开处。
 
 **可以改（这些属于格式，不属于含义）：**
@@ -138,7 +139,7 @@ python scripts/repo_scan.py "video highlight clip" "auto cut shorts" --stars 100
 2. **对照**：写一张小表：本 skill 的形态 → 该宿主的形态，动到的每个元素一行。
 3. **重写**：产出本地化副本。宿主允许并存文件时保留原件，方便用户 diff。
 4. **验证**：运行 `python scripts/verify_localized.py <本地化副本>`，必须打出 `PASS`；不通过就改，改完再跑一次。某条在宿主上确实活不下来（无文件系统、无工具），在声明里显式写 `unsupported on this host` 并按 host-adapters 的降级表处理，**不许静默删掉**。校验器故意放在模型外面：你说"我保留了规则"不算证据。
-5. **声明**：文件最后一行（也是回复的最后一行）必须是
+5. **声明**：文件最后一个非空、且不在代码围栏内的行（末尾追加版权/生成时间不算错），以及回复的最后一行，必须是
 
 ```
 localized: host=<名称> | kept=<原样保留的不变项> | changed=<改动的包装项> | unsupported=<做不到的项及原因，没有就写 none>
