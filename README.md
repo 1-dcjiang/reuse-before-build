@@ -1,28 +1,107 @@
-# reuse-before-build · 先复用，再新建
+# reuse-before-build
 
-> 一个面向 AI 编程助手的 Skill：**在写新程序之前，先去找已经存在的公开实现，并优先加入那个仓库、成为公共贡献者，而不是从零再造一个。**
+> An AI agent skill: **before writing a new program, search for the existing open-source implementation and join that repo as a public contributor — instead of shipping a worse duplicate.**
 
-A skill for AI coding assistants: **search for existing open-source implementations first, and contribute upstream instead of building a new one from scratch.**
+Works in Claude Skills, in `AGENTS.md` coding agents (Codex CLI, Cursor, Copilot, Gemini CLI, Windsurf, Cline, Roo, Kilo, Continue, Aider, OpenHands, Amp, Zed, Junie, Amazon Q, Kiro, Trae, Qoder), in chat AIs with custom instructions (ChatGPT, Claude.ai, Gemini, Grok, Copilot, Perplexity, Le Chat, DeepSeek, Doubao, Kimi, Qwen, ERNIE, Yuanbao, Zhipu, Spark, MiniMax) and in self-hosted agents (LangChain, LlamaIndex, CrewAI, AutoGen, Dify, Coze, n8n). Full matrix: [`references/host-adapters.md`](references/host-adapters.md). 中文版见下方。
 
-**编码代理**：Claude Code · Codex CLI · Cursor · GitHub Copilot · Gemini CLI · Windsurf · Cline · Roo Code · Kilo Code · Continue · Aider · OpenHands · Amp · Zed · JetBrains Junie · Amazon Q / Kiro · Trae · Qoder · 通义灵码 · CodeGeeX · 文心 Comate · 腾讯 CodeBuddy（走 `AGENTS.md` / `CLAUDE.md` / `.cursor/rules` 等仓库规则文件）
+## The problem it fixes
 
-**对话式 AI**：ChatGPT · Claude.ai · Gemini · Grok · Microsoft Copilot · Perplexity · Mistral Le Chat · DeepSeek · 豆包 · Kimi · 通义千问 · 文心一言 · 腾讯元宝 · 智谱清言 · 讯飞星火 · MiniMax · 阶跃（走自定义指令 / 系统提示）
+The most common AI failure is not "can't write code" — it is **writing a worse version of something that already exists**, in a place where other people already did the work:
 
-**自建 Agent**：LangChain · LlamaIndex · CrewAI · AutoGen · Dify · Coze · n8n 及任何能吃 system prompt 的 Agent。
+- a 20-line `ffmpeg` job becomes a 1,400-line homemade framework;
+- the fourth unmaintained plugin for the same editor feature, while three alternatives are alive upstream;
+- an upstream issue already says "PRs welcome" — and nobody picks it up.
+
+This skill makes "search → evaluate → contribute → build last" an executable procedure, and puts a **code gate** in front of the default reflex to start scaffolding.
+
+## Five core rules
+
+1. Assume it already exists until searching proves otherwise.
+2. The default outcome is joining an existing public repo, not creating a new one.
+3. Prove non-reusability before building new — license, direction, maintenance, requirement mismatch.
+4. Contribution must be genuinely useful; no typo/formatting PR farming.
+5. Code gate: candidates and a first concrete action come before any scaffold.
+
+## Decision path
+
+```
+discover (GitHub / package ecosystem / issue archaeology)
+   ↓
+score six dimensions: activity · responsiveness · license · contribution friendliness · fit · code quality
+   ↓
+Join (PR upstream) → Extend (official plugin) → Fork (PR back) → Build (state the reason)
+```
+
+## Contents
+
+```
+SKILL.md                               canonical procedure (English), two lanes, hard constraints
+references/zh-guide.md                 full Chinese edition of SKILL.md
+references/discovery-playbook.md       three search rounds: GitHub qualifiers, gh commands, plugin markets, issue archaeology
+references/repo-triage.md              six-dimension scoring + license compatibility + red flags
+references/contribution-protocol.md    issue → PR flow, PR template, downgrade paths, anti-patterns
+references/worked-examples.md          Join / Extend / Fork / Build deliverables + one counter-example
+references/host-adapters.md            per-host placement, rule-file names, paste-ready prompts (EN + 中文)
+scripts/repo_scan.py                   batch gh search, dedupe, flag no-license and stalled repos
+```
+
+## Install
+
+Four placements — pick by host. Exact platform list, rule-file names and character budgets are in [`references/host-adapters.md`](references/host-adapters.md).
+
+**① Skill directory** (Claude / any Agent Skills host)
+Drop the whole folder into the skills directory. `SKILL.md` frontmatter is read automatically; `references/` loads on demand.
+
+**② Repo rule file** (coding agents)
+Put the strict block from `references/host-adapters.md` into `AGENTS.md` at the repo root — the cross-tool standard. Claude Code uses `CLAUDE.md`, Copilot `.github/copilot-instructions.md`, Cursor `.cursor/rules/*.mdc`, Windsurf `.windsurf/rules/*.md`, Cline `.clinerules/`, Kiro `.kiro/steering/*.md`.
+
+**③ Custom instructions** (chat AIs)
+Paste the condensed prompt (English or Chinese) into settings. Where project knowledge files exist (ChatGPT Projects, Claude Projects, Gemini Gems), upload the full edition too.
+
+**④ Self-hosted agents**
+First block of the system prompt, plus tool notes for `web_search` / `fetch` / `gh`. Without tools, follow the capability-degradation table in the skill.
+
+## Quick start
+
+With an authenticated GitHub CLI, produce the candidate table before thinking:
+
+```bash
+gh auth status
+python scripts/repo_scan.py "video highlight clip" "auto cut shorts" --stars 100
+```
+
+```
+| Repo | ★ | Last push | Language | License | Open issues | Hit | URL |
+| haierkeys/obsidian-fast-note-sync | 3153 | 2026-08-14 | JavaScript | apache-2.0 | 111 | ... |
+```
+
+Then open each repo, read `CONTRIBUTING` and the recently merged PRs, and score with `references/repo-triage.md`.
+
+No `gh` / no network: `references/discovery-playbook.md` has copy-pasteable GitHub search strings and the degradation rules (never invent stars or licenses from memory).
+
+## Three red lines
+
+- **No LICENSE file in a repo = not copyable, not contributable** (all rights reserved by default).
+- Opening a PR without reading `CONTRIBUTING` gets rejected in most serious repos.
+- Low-value PR farming does not make you "an author" — it gets the account blocked.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
 
 ---
 
-## 它解决什么问题
+# 先复用，再新建（中文）
 
-AI 现在最常见的失败模式不是"写不出代码"，而是**在别人已经做过的地方，从零写了一个更差的版本**：
+> 一个面向 AI 编程助手的 Skill：**在写新程序之前，先去找已经存在的公开实现，并优先加入那个仓库、成为公共贡献者，而不是从零再造一个。**
 
-- 一个能用 `ffmpeg` + 现成库解决的剪辑需求，被写成 1400 行自制框架；
-- 一个 Obsidian 插件，市场上已经有 3 个同类，作者还活着，最后变成第 4 个没人维护的；
-- 上游 issue 里已经有人提过同一需求、维护者回了 "PRs welcome"，却没人去接。
+支持 Claude Skills、`AGENTS.md` 系编码代理（Codex CLI、Cursor、Copilot、Gemini CLI、Windsurf、Cline、Roo、Kilo、Continue、Aider、OpenHands、Amp、Zed、Junie、Amazon Q、Kiro、Trae、Qoder、通义灵码、CodeGeeX、文心 Comate、腾讯 CodeBuddy）、聊天式 AI（ChatGPT、Claude.ai、Gemini、Grok、DeepSeek、豆包、Kimi、通义千问、文心一言、腾讯元宝、智谱清言、讯飞星火、MiniMax、阶跃）与自建 Agent（LangChain、LlamaIndex、CrewAI、AutoGen、Dify、Coze、n8n）。
 
-这个 Skill 把"先检索、再评估、再贡献、最后才新建"固化成可执行流程，并**用门禁挡住"直接开写"这个默认行为**。
+## 它解决什么
 
-## 核心规则（五条）
+AI 现在最常见的失败不是"写不出代码"，而是**在别人已经做过的地方，从零写了一个更差的版本**。这个 Skill 把"先检索、再评估、再贡献、最后才新建"固化成流程，并用**门禁**挡住"直接开写"这个默认行为。
+
+## 五条核心规则
 
 1. 默认假设"已经有人做过"，直到检索证明没有。
 2. 默认目标是加入已有公开仓库，而不是新建仓库。
@@ -40,60 +119,14 @@ AI 现在最常见的失败模式不是"写不出代码"，而是**在别人已�
 Join 提 PR 进上游 → Extend 做官方插件 → Fork 改完回提 → Build 新建（须写明理由）
 ```
 
-## 目录
+## 中文安装
 
-```
-SKILL.md                               主流程、两条档位（快速档 / 完整档）、硬约束
-references/discovery-playbook.md       三轮检索：GitHub 限定符、gh 命令、插件市场、issue 考古
-references/repo-triage.md              六维打分细则 + 许可证兼容速查 + 红旗清单
-references/contribution-protocol.md    issue → PR 全流程、PR 模板、降级路径、反模式
-references/worked-examples.md          Join / Extend / Fork / Build 四种结论的交付形态
-references/host-adapters.md            各平台落位 + 中英文可粘贴精简提示
-scripts/repo_scan.py                   一键粗筛：gh search 批量跑、去重、标出无许可与停滞仓库
-```
-
-## 安装
-
-四种落位，按宿主自选。完整的平台清单、规则文件名对照、字数预算见 [references/host-adapters.md](references/host-adapters.md)。
-
-**① Skill 目录**（Claude / 支持 Agent Skills 规范的宿主）
-把整个目录放进 Skills 目录即可，`SKILL.md` 的 frontmatter 会被自动读取，`references/` 按需加载。
-
-**② 仓库规则文件**（编码代理：Codex CLI / Cursor / Copilot / Gemini CLI / Windsurf / Cline / Aider / Trae / Qoder / Junie …）
-把 `references/host-adapters.md` 的「严格版」写进仓库根 `AGENTS.md`（跨工具事实标准）；Claude Code 用 `CLAUDE.md`，Copilot 用 `.github/copilot-instructions.md`，Cursor 用 `.cursor/rules/*.mdc`，Windsurf 用 `.windsurf/rules/`。
-
-**③ 自定义指令**（ChatGPT / Claude.ai / Gemini / Grok / DeepSeek / 豆包 / Kimi / 通义 / 文心 / 元宝 / 智谱 / 星火 / MiniMax …）
-复制「精简版（中文）」或「Condensed prompt (English)」进设置里的自定义指令；有知识文件/项目说明的（ChatGPT Projects、Claude Projects、Gemini Gems）把完整版一起传上去。
-
-**④ 自建 Agent**（LangChain / LlamaIndex / CrewAI / AutoGen / Dify / Coze / n8n）
-放 system prompt 第一段，并在工具说明里给出 `web_search` / `fetch` / `gh` 能力；无工具时走 skill 里的「能力受限」降级。
-
-## 快速开始
-
-有 GitHub CLI 时，先出一张候选表再动脑：
-
-```bash
-gh auth status
-python scripts/repo_scan.py "video highlight clip" "auto cut shorts" --stars 100
-```
-
-输出形如：
-
-```
-| 仓库 | ★ | 最近推送 | 语言 | 许可 | open issues | 命中关键词 | URL |
-| haierkeys/obsidian-fast-note-sync | 3152 | 2026-08-14 | JavaScript | apache-2.0 | 111 | ... |
-```
-
-然后按 `references/repo-triage.md` 打开每个仓库读 `CONTRIBUTING` 与最近合并的 PR，做六维打分。
-
-没有 `gh` / 没有联网时：`references/discovery-playbook.md` 里有可直接粘贴到 GitHub 搜索框的检索串，以及"无能力时如何降级"的写法（禁止凭记忆编造 star 数与许可证）。
+- **中文完整版**：`references/zh-guide.md`，可整份注入 DeepSeek / 豆包 / Kimi / 通义 / 文心 / 元宝 / 智谱 / 星火的自定义提示，或作为知识文件上传。
+- **精简版（约 300 字）**：`references/host-adapters.md` 里的「精简版（中文）」，适合只有一个小提示词框的宿主。
+- **编码代理**：把「严格版」写进仓库根 `AGENTS.md`。
 
 ## 三条底线
 
-- 代码仓库**没有 LICENSE 文件 = 不可复制、不可提交**（默认保留所有权利）。
+- 仓库**没有 LICENSE 文件 = 不可复制、不可提交**（默认保留所有权利）。
 - 没读 `CONTRIBUTING` 就提 PR，在主流仓库几乎必被拒。
-- 刷低质量 PR（错别字、格式化、无测试重复实现）不会让你"成为作者"，只会让账号被拉黑。
-
-## 许可
-
-MIT，见 [LICENSE](LICENSE)。
+- 刷低质量 PR 不会让你"成为作者"，只会让账号被拉黑。
