@@ -70,6 +70,9 @@ Paste the condensed prompt (English or Chinese) into settings. Where project kno
 **④ Self-hosted agents**
 First block of the system prompt, plus tool notes for `web_search` / `fetch` / `gh`. Without tools, follow the capability-degradation table in the skill.
 
+**⑤ Let it localize itself**
+The skill carries a self-localization section: an agent loading it in a host with different conventions (other frontmatter keys, a flat prompt, a different language, a plugin manifest, a smaller budget) rewrites the packaging to match its own format — and keeps the rules fixed. Useful when you drop it somewhere this README never listed: it adapts instead of failing.
+
 ## Quick start
 
 With an authenticated GitHub CLI, produce the candidate table before thinking:
@@ -133,6 +136,7 @@ Join 提 PR 进上游 → Extend 做官方插件 → Fork 改完回提 → Build
 - **中文完整版**：`references/zh-guide.md`，可整份注入 DeepSeek / 豆包 / Kimi / 通义 / 文心 / 元宝 / 智谱 / 星火的自定义提示，或作为知识文件上传。
 - **精简版（约 300 字）**：`references/host-adapters.md` 里的「精简版（中文）」，适合只有一个小提示词框的宿主。
 - **编码代理**：把「严格版」写进仓库根 `AGENTS.md`。
+- **自适配**：装到清单里没列过的宿主也没关系——skill 内含自适配规则，会按那个宿主的格式（字段、布局、语言、工具）改包装，规则本身不动。
 
 ## 三条底线
 

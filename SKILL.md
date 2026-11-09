@@ -8,7 +8,8 @@ description: Before writing any new program, script, library, plugin or service,
 
 Rules, not a tool. Works in any host that can read files (Claude Skills, AGENTS.md coding agents) and degrades to a paste-in prompt elsewhere — see [references/host-adapters.md](references/host-adapters.md). Chinese edition of this file: [references/zh-guide.md](references/zh-guide.md).
 
-**Contents**: [Core rules](#core-rules) · [Two lanes](#two-lanes) · [Step 1 Discover](#step-1--discover) · [Step 2 Evaluate](#step-2--evaluate) · [Step 3 Contribute](#step-3--contribute) · [Step 4 Deliver](#step-4--deliver) · [When not to reuse](#when-not-to-reuse) · [Hard constraints](#hard-constraints) · [Hosts](#hosts)
+**Contents**: [Core rules](#core-rules) · [Two lanes](#two-lanes) · [Step 1 Discover](#step-1--discover) · [Step 2 Evaluate](#step-2--evaluate) · [Step 3 Contribute](#step-3--contribute) · [Step 4 Deliver](#step-4--deliver)
+[When not to reuse](#when-not-to-reuse) · [Hard constraints](#hard-constraints) · [Hosts](#hosts) · [Self-localization](#self-localization-adapt-the-packaging-never-the-rules) · [Worked examples](#worked-examples)
 
 ## Core rules
 
@@ -115,6 +116,36 @@ Four ways to install, plus per-host rule-file paths and paste-ready prompts (Eng
 | Self-hosted agents | LangChain, LlamaIndex, CrewAI, AutoGen, Dify, Coze, n8n | First block of the system prompt + tool notes |
 
 See [references/host-adapters.md](references/host-adapters.md) for the full matrix and the exact rule-file name per host.
+
+## Self-localization: adapt the packaging, never the rules
+
+A host may expect a different shape than this file ships in — another frontmatter schema, a single flat system prompt, a JSON tool definition, a different language, a plugin manifest, a shorter context budget. Adapt the packaging on first use; do not adapt the rules.
+
+**Invariants — reproduce them exactly, whatever the container:**
+
+- The five core rules, including the code gate and the `不可复用原因 / Not reusable because:` line.
+- Verdict order: Join → Extend → Fork → Build; Build only with a stated reason.
+- The four-part deliverable (found / why / what I will add / alternatives and risks).
+- The hard constraints, especially: never invent repos, stars or licenses; never PR without reading CONTRIBUTING; never paste private code in public.
+
+**Free to change — these are formatting, not meaning:**
+
+- Frontmatter keys and order: fill whatever the host requires (`name` / `description`, `title` / `when_to_use`, `tools`, `version`), and drop keys the host rejects.
+- File layout and names: one flat prompt, `rules/reuse.md`, a plugin manifest entry, or a memory block. Merge or split `references/` as the host's loading model requires.
+- How references resolve: rewrite relative paths to the host's own resource syntax, or inline the referenced sections when the host cannot open files.
+- Language: translate into the host's working language while keeping the gate sentence in both languages, so a bilingual user still recognises it.
+- Tool bindings: `gh` CLI ↔ the host's GitHub tool/MCP ↔ plain `web_search`; state which one this host actually has.
+- Compression: condensed, full, or sectioned — but never below the invariants.
+
+**Procedure, once per host:**
+
+1. **Detect** — read the host's own docs, or two of its existing skills, and list its conventions: frontmatter fields, file layout, how resources are loaded, context budget, available tools, output language.
+2. **Map** — write a short table: this skill's shape → this host's shape, one row per element you will touch.
+3. **Rewrite** — emit the localized copy. Keep the original untouched if the host allows side-by-side files, so the user can diff.
+4. **Verify** — check every invariant is present verbatim in the localized copy; if one cannot survive (no file access, no tools), mark it explicitly as `unsupported on this host` and follow the degradation table in host-adapters instead of silently dropping it.
+5. **Declare** — one line back to the user: what was localized (fields, layout, language, tool), and what was kept as-is. Never claim the local version is "the same skill" without that line.
+
+Localization is a last-mile packaging step, not permission to rewrite the procedure. If a host's conventions force a real semantic change, say so and ask — do not ship a quietly weakened version.
 
 ## Worked examples
 
