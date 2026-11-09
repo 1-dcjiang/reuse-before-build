@@ -2,14 +2,23 @@
 
 > An AI agent skill: **before writing a new program, search for the existing open-source implementation and join that repo as a public contributor — instead of shipping a worse duplicate.**
 
-Works everywhere an instruction can go:
+Ask for "a tool that cuts long videos into shorts" and the model writes a 1,400-line framework. Three maintained repos already do that, and one has an issue saying *PRs welcome*.
+
+**What it adds** — `discover → score → contribute → build last` as a procedure, plus a code gate in front of the reflex to start scaffolding.
+
+**Runs in** — Claude Skills · any `AGENTS.md` / `CLAUDE.md` coding agent · ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Kimi · LangChain, CrewAI, Dify. 50+ hosts in total.
+
+<details>
+<summary>All supported hosts</summary>
 
 - **Skill directory**: Claude Skills and any host following the [Agent Skills spec](https://agentskills.io/specification)
 - **Coding agents** (`AGENTS.md` or their own rule file): Codex CLI, Cursor, Copilot, Gemini CLI, Windsurf, Cline, Roo, Kilo, Continue, Aider, OpenHands, Amp, Zed, Junie, Amazon Q, Kiro, Trae, Qoder
 - **Chat AIs** (custom instructions or project knowledge): ChatGPT, Claude.ai, Gemini, Grok, Copilot, Perplexity, Le Chat, DeepSeek, Doubao, Kimi, Qwen, ERNIE, Yuanbao, Zhipu, Spark, MiniMax
 - **Self-hosted agents**: LangChain, LlamaIndex, CrewAI, AutoGen, Dify, Coze, n8n
 
-Full matrix with rule-file names and character budgets: [`references/host-adapters.md`](references/host-adapters.md). 中文版见下方。
+</details>
+
+Exact rule-file names and character budgets per host: [`references/host-adapters.md`](references/host-adapters.md). 中文版见下方。
 
 [The problem](#the-problem-it-fixes) · [Rules](#five-core-rules) · [Decision path](#decision-path) · [Contents](#contents) · [Install](#install) · [Quick start](#quick-start) · [中文](#先复用再新建中文)
 
@@ -150,7 +159,7 @@ MIT, see [LICENSE](LICENSE).
 
 > 一个面向 AI 编程助手的 Skill：**在写新程序之前，先去找已经存在的公开实现，并优先加入那个仓库、成为公共贡献者，而不是从零再造一个。**
 
-支持 Claude Skills、`AGENTS.md` 系编码代理（Codex CLI、Cursor、Copilot、Gemini CLI、Windsurf、Cline、Roo、Kilo、Continue、Aider、OpenHands、Amp、Zed、Junie、Amazon Q、Kiro、Trae、Qoder、通义灵码、CodeGeeX、文心 Comate、腾讯 CodeBuddy）、聊天式 AI（ChatGPT、Claude.ai、Gemini、Grok、DeepSeek、豆包、Kimi、通义千问、文心一言、腾讯元宝、智谱清言、讯飞星火、MiniMax、阶跃）与自建 Agent（LangChain、LlamaIndex、CrewAI、AutoGen、Dify、Coze、n8n）。
+支持 Claude Skills、`AGENTS.md` 系编码代理（Codex CLI、Cursor、Copilot、Gemini CLI、Windsurf、Cline、通义灵码、CodeGeeX、文心 Comate、腾讯 CodeBuddy 等）、聊天式 AI（ChatGPT、Claude、Gemini、Grok、DeepSeek、豆包、Kimi、通义千问、文心一言、腾讯元宝、智谱清言、讯飞星火）与自建 Agent（LangChain、LlamaIndex、CrewAI、AutoGen、Dify、Coze、n8n）。完整清单见 [`references/host-adapters.md`](references/host-adapters.md)。
 
 ## 它解决什么
 
