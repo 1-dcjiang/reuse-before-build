@@ -2,7 +2,16 @@
 
 > An AI agent skill: **before writing a new program, search for the existing open-source implementation and join that repo as a public contributor — instead of shipping a worse duplicate.**
 
-Works in Claude Skills, in `AGENTS.md` coding agents (Codex CLI, Cursor, Copilot, Gemini CLI, Windsurf, Cline, Roo, Kilo, Continue, Aider, OpenHands, Amp, Zed, Junie, Amazon Q, Kiro, Trae, Qoder), in chat AIs with custom instructions (ChatGPT, Claude.ai, Gemini, Grok, Copilot, Perplexity, Le Chat, DeepSeek, Doubao, Kimi, Qwen, ERNIE, Yuanbao, Zhipu, Spark, MiniMax) and in self-hosted agents (LangChain, LlamaIndex, CrewAI, AutoGen, Dify, Coze, n8n). Full matrix: [`references/host-adapters.md`](references/host-adapters.md). 中文版见下方。
+Works everywhere an instruction can go:
+
+- **Skill directory**: Claude Skills and any host following the [Agent Skills spec](https://agentskills.io/specification)
+- **Coding agents** (`AGENTS.md` or their own rule file): Codex CLI, Cursor, Copilot, Gemini CLI, Windsurf, Cline, Roo, Kilo, Continue, Aider, OpenHands, Amp, Zed, Junie, Amazon Q, Kiro, Trae, Qoder
+- **Chat AIs** (custom instructions or project knowledge): ChatGPT, Claude.ai, Gemini, Grok, Copilot, Perplexity, Le Chat, DeepSeek, Doubao, Kimi, Qwen, ERNIE, Yuanbao, Zhipu, Spark, MiniMax
+- **Self-hosted agents**: LangChain, LlamaIndex, CrewAI, AutoGen, Dify, Coze, n8n
+
+Full matrix with rule-file names and character budgets: [`references/host-adapters.md`](references/host-adapters.md). 中文版见下方。
+
+[The problem](#the-problem-it-fixes) · [Rules](#five-core-rules) · [Decision path](#decision-path) · [Contents](#contents) · [Install](#install) · [Quick start](#quick-start) · [中文](#先复用再新建中文)
 
 ## The problem it fixes
 
@@ -72,7 +81,7 @@ python scripts/repo_scan.py "video highlight clip" "auto cut shorts" --stars 100
 
 ```
 | Repo | ★ | Last push | Language | License | Open issues | Hit | URL |
-| haierkeys/obsidian-fast-note-sync | 3153 | 2026-08-14 | JavaScript | apache-2.0 | 111 | ... |
+| haierkeys/obsidian-fast-note-sync | 3153 | 2026-08-14 | JavaScript | apache-2.0 | 111 | obsidian sync plugin | https://github.com/haierkeys/obsidian-fast-note-sync |
 ```
 
 Then open each repo, read `CONTRIBUTING` and the recently merged PRs, and score with `references/repo-triage.md`.

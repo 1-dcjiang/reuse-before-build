@@ -1,5 +1,6 @@
 ---
 name: reuse-before-build
+license: MIT
 description: Before writing any new program, script, library, plugin or service, search for existing open-source implementations with the same purpose or idea — especially on GitHub — and prefer joining that repository as a public contributor over creating a new one from scratch. Use when the user asks to "build me a tool", "write a script that ...", "create a new app / library / bot / plugin / service", "implement X from scratch", "is there an existing open-source project for this", "contribute to an open-source repo", "upstream this fix", or "open a PR"; also when the user says 帮我写一个…工具、做一个和 X 一样的程序、有没有现成的、从零实现一个…. Skip this skill only when the user requires private or closed-source code, or an existing license forbids redistribution.
 ---
 
@@ -7,13 +8,16 @@ description: Before writing any new program, script, library, plugin or service,
 
 Rules, not a tool. Works in any host that can read files (Claude Skills, AGENTS.md coding agents) and degrades to a paste-in prompt elsewhere — see [references/host-adapters.md](references/host-adapters.md). Chinese edition of this file: [references/zh-guide.md](references/zh-guide.md).
 
+**Contents**: [Core rules](#core-rules) · [Two lanes](#two-lanes) · [Step 1 Discover](#step-1--discover) · [Step 2 Evaluate](#step-2--evaluate) · [Step 3 Contribute](#step-3--contribute) · [Step 4 Deliver](#step-4--deliver) · [When not to reuse](#when-not-to-reuse) · [Hard constraints](#hard-constraints) · [Hosts](#hosts)
+
 ## Core rules
 
 1. **Assume it already exists until searching proves otherwise.** Never draft a prototype first and look for references later. Order is always search → evaluate → decide → build.
 2. **The default outcome is joining an existing public repository, not creating a new one.** What the user actually wants is a working, maintained, upgradeable thing — not an orphan one-off. An upstream repo brings tests, issue tracking, release channels and users for free.
 3. **Prove non-reusability before building new.** New code requires a stated reason (license, direction conflict, abandoned upstream with no viable fork, genuinely different requirement) written in the deliverable.
 4. **Contribution must be genuinely useful.** No typo, formatting or untested-duplicate PRs. Those get closed and tag the account as a spammer.
-5. **Code gate: candidates and a first concrete action come before scaffolding.** Do not output a full new-project scaffold before you have listed 3–6 candidates and the first executable contribution action (draft issue text or PR plan). If a matching repo exists and you still choose to build new, the first line of the reply must be `不可复用原因 / Not reusable because: <license | direction | maintenance | requirement mismatch>`.
+5. **Code gate: candidates and a first concrete action come before scaffolding.** Do not output a full new-project scaffold before you have listed 3–6 candidates and the first executable contribution action (draft issue text or PR plan).
+   If a matching repo exists and you still choose to build new, the first line of the reply must be `不可复用原因 / Not reusable because: <license | direction | maintenance | requirement mismatch>`.
 
 ## Two lanes
 
