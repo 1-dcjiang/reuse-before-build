@@ -6,12 +6,12 @@ Ask for "a tool that cuts long videos into shorts" and the model writes a 1,400-
 
 **What it adds** — `discover → score → contribute → build last` as a procedure, plus a code gate in front of the reflex to start scaffolding.
 
-**Runs in** — Claude Skills · any `AGENTS.md` / `CLAUDE.md` coding agent · ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Kimi · LangChain, CrewAI, Dify. 50+ hosts in total.
+**Runs in** — Claude Skills · DeepSeek Harness (`dsh`) skill roots · any `AGENTS.md` / `CLAUDE.md` coding agent · ChatGPT, Claude, Gemini, Grok, DeepSeek, Doubao, Kimi · LangChain, CrewAI, Dify. 50+ hosts in total.
 
 <details>
 <summary>All supported hosts</summary>
 
-- **Skill directory**: Claude Skills and any host following the [Agent Skills spec](https://agentskills.io/specification)
+- **Skill directory**: Claude Skills, DeepSeek Harness (`dsh`), and any host following the [Agent Skills spec](https://agentskills.io/specification)
 - **Coding agents** (`AGENTS.md` or their own rule file): Codex CLI, Cursor, Copilot, Gemini CLI, Windsurf, Cline, Roo, Kilo, Continue, Aider, OpenHands, Amp, Zed, Junie, Amazon Q, Kiro, Trae, Qoder
 - **Chat AIs** (custom instructions or project knowledge): ChatGPT, Claude.ai, Gemini, Grok, Copilot, Perplexity, Le Chat, DeepSeek, Doubao, Kimi, Qwen, ERNIE, Yuanbao, Zhipu, Spark, MiniMax
 - **Self-hosted agents**: LangChain, LlamaIndex, CrewAI, AutoGen, Dify, Coze, n8n
@@ -70,8 +70,8 @@ tests/test_smoke.py                    offline smoke tests: exit codes, leap-day
 
 Four placements — pick by host. Exact platform list, rule-file names and character budgets are in [`references/host-adapters.md`](references/host-adapters.md).
 
-**① Skill directory** (Claude / any Agent Skills host)
-Drop the whole folder into the skills directory. `SKILL.md` frontmatter is read automatically; `references/` loads on demand.
+**① Skill directory** (Claude / any Agent Skills host / DeepSeek Harness)
+Drop the whole folder into the skills directory. `SKILL.md` frontmatter is read automatically; `references/` loads on demand. In DSH: `~/.dsh/skills/reuse-before-build/` (user), `<repo>/.dsh/skills/` (project, root = nearest `.git` ancestor), or `~/.agents/skills/` (shared with Codex). DSH discovers only one level — keep the folder bundle, don't flatten to `reuse-before-build.md` — and renders at most 500 characters of `description` into the catalog, which is why this skill's description is kept to 475.
 
 **② Repo rule file** (coding agents)
 Put the strict block from `references/host-adapters.md` into `AGENTS.md` at the repo root — the cross-tool standard. Claude Code uses `CLAUDE.md`, Copilot `.github/copilot-instructions.md`, Cursor `.cursor/rules/*.mdc`, Windsurf `.windsurf/rules/*.md`, Cline `.clinerules/`, Kiro `.kiro/steering/*.md`.
@@ -188,6 +188,7 @@ Join 提 PR 进上游 → Extend 做官方插件 → Fork 改完回提 → Build
 - **中文完整版**：`references/zh-guide.md`，可整份注入 DeepSeek / 豆包 / Kimi / 通义 / 文心 / 元宝 / 智谱 / 星火的自定义提示，或作为知识文件上传。
 - **精简版（约 300 字）**：`references/host-adapters.md` 里的「精简版（中文）」，适合只有一个小提示词框的宿主。
 - **编码代理**：把「严格版」写进仓库根 `AGENTS.md`。
+- **DeepSeek Harness（dsh）**：整个目录放到 `~/.dsh/skills/reuse-before-build/`（或 `~/.agents/skills/`，项目级放 `<仓库>/.dsh/skills/`）。dsh 只扫一层目录，且目录里展示的 description 上限 500 字符——本 skill 已压到 475，中文触发词在前，直接拷不用改。细节见 `references/host-adapters.md` 的「A 类补充」。
 - **自适配**：装到清单里没列过的宿主也没关系——skill 内含自适配规则，会按那个宿主的格式（字段、布局、语言、工具）改包装，规则本身不动。
 
 ## 三条底线

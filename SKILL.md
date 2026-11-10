@@ -1,7 +1,7 @@
 ---
 name: reuse-before-build
 license: MIT
-description: Before writing any new program, script, library, plugin or service, search for existing open-source implementations with the same purpose or idea — especially on GitHub — and prefer joining that repository as a public contributor over creating a new one from scratch. Use when the user asks to "build me a tool", "write a script that ...", "create a new app / library / bot / plugin / service", "implement X from scratch", "is there an existing open-source project for this", "contribute to an open-source repo", "upstream this fix", or "open a PR"; also when the user says 帮我写一个…工具、做一个和 X 一样的程序、有没有现成的、从零实现一个…. Skip this skill only when the user requires private or closed-source code, or an existing license forbids redistribution.
+description: 用户说“帮我写一个…工具/脚本/插件/服务”“做一个和 X 一样的程序”“有没有现成的开源项目”“从零实现一个”，或说 upstream this fix、提 PR 时使用：先检索 GitHub 与包生态里已有同用途实现，按活跃度、许可、贡献友好度评估，优先加入该仓库当公共贡献者，而不是新建更差的重复品。只有要私有/闭源代码、许可禁止再分发时才跳过。Before writing any new program, script, library, plugin or service, search GitHub for an existing implementation and contribute upstream instead of shipping a duplicate, e.g. “build me a tool”, “write a script that…”, “is there an existing project for this”, “implement X from scratch”, “open a PR”.
 ---
 
 # Reuse Before Build
