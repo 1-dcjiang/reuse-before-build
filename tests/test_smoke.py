@@ -79,6 +79,67 @@ class TestHelpers(unittest.TestCase):
         }
         self.assertIn("⚠停滞", repo_scan.render_table([row]))
 
+    def test_keyword_starting_with_dash_goes_after_terminator(self):
+        argv = repo_scan.search_args("-foo", 50, "2025-01-01", 6)
+        self.assertEqual(argv[:2], ["search", "repos"])
+        self.assertEqual(argv[-2], "--")
+        self.assertTrue(argv[-1].startswith("-foo "))
+        self.assertLess(argv.index("--archived=false"), argv.index("--"))
+
+    def test_recorded_gh_json_parses_into_rows(self):
+        """契约测试：直接喂录好的 `gh search repos --json` 输出，不 mock gh。"""
+        path = os.path.join(ROOT, "tests", "fixtures", "gh_search_repos.json")
+        with open(path, encoding="utf-8") as fh:
+            rows = repo_scan.parse_search_output(fh.read())
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["owner"]["login"], "owner")
+        self.assertEqual(rows[0]["license"]["spdxId"], "MIT")
+
+
+class TestGhContract(unittest.TestCase):
+    """真跑一遍 subprocess：假 gh 返回录好的 JSON，同时记录 argv。"""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="rbb_fakegh_")
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        fixture = os.path.join(ROOT, "tests", "fixtures", "gh_search_repos.json")
+        shutil.copy2(fixture, os.path.join(self.tmp, "gh_search_repos.json"))
+        self.script = os.path.join(self.tmp, "fake_gh.py")
+        with open(self.script, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(
+                "import pathlib, sys\n"
+                "root = pathlib.Path(__file__).parent\n"
+                "(root / 'argv.txt').write_text('\\n'.join(sys.argv[1:]), encoding='utf-8')\n"
+                "print((root / 'gh_search_repos.json').read_text(encoding='utf-8'))\n"
+            )
+
+    def _exe(self):
+        if os.name == "nt":
+            path = os.path.join(self.tmp, "gh.bat")
+            with open(path, "w", encoding="ascii", newline="\r\n") as fh:
+                fh.write("@echo off\n")
+                fh.write(f'"{sys.executable}" "{self.script}" %*\n')
+            return path
+        path = os.path.join(self.tmp, "gh")
+        with open(path, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write("#!/bin/sh\n")
+            fh.write(f'exec "{sys.executable}" "{self.script}" "$@"\n')
+        os.chmod(path, 0o755)
+        return path
+
+    def test_scan_end_to_end_with_recorded_json(self):
+        gh = self._exe()
+        rows, ok = repo_scan.scan("video clip", 50, "2025-01-01", 6, gh_binary=gh)
+        self.assertTrue(ok)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["full_name"], "owner/autoclip")
+        self.assertEqual(rows[0]["matched_keyword"], "video clip")
+        with open(os.path.join(self.tmp, "argv.txt"), encoding="utf-8") as fh:
+            argv = fh.read().splitlines()
+        self.assertIn("--", argv, "检索串必须放在 -- 之后")
+        self.assertTrue(argv[-1].startswith("video clip "))
+        self.assertLess(argv.index("--archived=false"), argv.index("--"))
+
 
 class TestOutputs(unittest.TestCase):
     def setUp(self):
