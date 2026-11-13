@@ -91,7 +91,7 @@ class TestOutputs(unittest.TestCase):
         old_argv, old_auth, old_scan = sys.argv, repo_scan.auth_ok, repo_scan.scan
         try:
             repo_scan.auth_ok = lambda: (True, "")
-            repo_scan.scan = lambda kw, s, u, l: scan_result
+            repo_scan.scan = lambda kw, s, u, lim: scan_result
             sys.argv = [SCRIPT, *keywords, *extra_args]
             err, out = io.StringIO(), io.StringIO()
             with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
@@ -161,7 +161,7 @@ class TestCli(unittest.TestCase):
         old_auth, old_scan = repo_scan.auth_ok, repo_scan.scan
         try:
             repo_scan.auth_ok = lambda: (True, "")
-            repo_scan.scan = lambda kw, s, u, l: ([], False)
+            repo_scan.scan = lambda kw, s, u, lim: ([], False)
             sys.argv = [SCRIPT, "obsidian sync plugin"]
             err, out = io.StringIO(), io.StringIO()
             with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
@@ -238,8 +238,8 @@ class TestVerifier(unittest.TestCase):
 
     def test_removing_the_gate_fails(self):
         def mutate(text):
-            return "\n".join(l for l in text.splitlines()
-                             if "Not reusable because" not in l)
+            return "\n".join(line for line in text.splitlines()
+                             if "Not reusable because" not in line)
 
         p = self.verify(self._copy_with(self.SKILL, mutate, self.DECL))
         self.assertEqual(p.returncode, 1)
@@ -266,8 +266,8 @@ class TestVerifier(unittest.TestCase):
 
     def test_translated_block_without_lang_marker_fails(self):
         def mutate(text):
-            return "\n".join(l for l in text.splitlines()
-                             if "RBB:INVARIANTS:LANG:" not in l)
+            return "\n".join(line for line in text.splitlines()
+                             if "RBB:INVARIANTS:LANG:" not in line)
 
         p = self.verify(self._copy_with(self.ZH, mutate, self.DECL))
         self.assertEqual(p.returncode, 1)
@@ -278,8 +278,8 @@ class TestVerifier(unittest.TestCase):
     def test_deleting_a_rule_fails_in_translated_mode(self):
         """翻译模式不能靠"只比 6 个锚点"混过删条这一关。"""
         def mutate(text):
-            return "\n".join(l for l in text.splitlines()
-                             if "默认目标是加入已有公开仓库" not in l)
+            return "\n".join(line for line in text.splitlines()
+                             if "默认目标是加入已有公开仓库" not in line)
 
         p = self.verify(self._copy_with(self.ZH, mutate, self.DECL))
         self.assertEqual(p.returncode, 1)
@@ -476,6 +476,27 @@ class TestPromptDigests(unittest.TestCase):
         )
         self.assertEqual(p.returncode, 1, p.stdout + p.stderr)
         self.assertIn("not-registered", p.stderr)
+
+    def test_broken_registry_returns_rc2_instead_of_traceback(self):
+        """登记表结构坏了要报 FAIL/rc=2，不能把 KeyError traceback 甩给使用者。"""
+        script = self.make_tree(self.read(self.HOST_ADAPTERS))
+        bad = os.path.join(os.path.dirname(os.path.dirname(script)), "prompt-digests.json")
+        for payload in (
+            '{"prompts": [{"versions": []}]}',
+            '{"prompts": [{"id": "x", "versions": "oops"}]}',
+            '{"prompts": [{"id": "x", "versions": []}, {"id": "x", "versions": []}]}',
+            '{"prompts": "not-a-list"}',
+        ):
+            with open(bad, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write(payload)
+            for args in (["--verify"], ["--check", bad]):
+                p = subprocess.run(
+                    [sys.executable, "-X", "utf8", script, *args],
+                    capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60,
+                )
+                self.assertEqual(p.returncode, 2, f"{payload} {args}: {p.stdout}{p.stderr}")
+                self.assertIn("FAIL", p.stderr)
+                self.assertNotIn("Traceback", p.stderr)
 
 
 if __name__ == "__main__":
