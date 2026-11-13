@@ -66,7 +66,9 @@ references/integration-seam.md         stable integration seams ranked, thin ada
 references/worked-examples.md          Join / Extend / Fork / Build deliverables + one counter-example
 references/host-adapters.md            per-host placement, rule-file names, paste-ready prompts (EN + 中文)
 scripts/repo_scan.py                   batch gh search, dedupe, flag no-license and stalled repos
+scripts/prompt_digest.py               SHA-256 registry for the paste-ready prompts: --verify / --check / --emit
 scripts/verify_localized.py            check a localized copy: invariant block, anchors, declaration
+prompt-digests.json                    which prompt text is which version: id + sha256 (history kept)
 localization.contract.json             the machine-readable contract: block hash + required anchors
 tests/test_smoke.py                    offline smoke tests: exit codes, leap-day default, table escaping
 ```
@@ -83,6 +85,15 @@ Put the strict block from `references/host-adapters.md` into `AGENTS.md` at the 
 
 **③ Custom instructions** (chat AIs)
 Paste the condensed prompt (English or Chinese) into settings. Where project knowledge files exist (ChatGPT Projects, Claude Projects, Gemini Gems), upload the full edition too.
+
+A pasted prompt is the easiest way to end up with "a different skill": one edited word and nobody knows which version is installed six months later. Every paste-ready block is anchored in `references/host-adapters.md` and hashed in `prompt-digests.json`, so the copy can be identified afterwards:
+
+```bash
+python scripts/prompt_digest.py --check my-pasted-prompt.txt   # MATCH id=zh-condensed version=p1, or NO MATCH
+python scripts/prompt_digest.py --verify                       # registry vs markdown, run before every release
+```
+
+The digest normalizes CRLF, trailing spaces and outer blank lines, so ordinary copy-paste noise does not produce a false alarm — an actual wording change always does.
 
 **④ Self-hosted agents**
 First block of the system prompt, plus tool notes for `web_search` / `fetch` / `gh`. Without tools, follow the capability-degradation table in the skill.
