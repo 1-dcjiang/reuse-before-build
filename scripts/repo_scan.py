@@ -34,7 +34,7 @@ except Exception:
     pass
 
 
-__version__ = "1.2.5"
+__version__ = "1.2.6"
 
 PERMISSIVE = {"mit", "apache-2.0", "bsd-3-clause", "bsd-2-clause", "isc", "mpl-2.0", "0bsd", "unlicense"}
 
@@ -180,18 +180,19 @@ def license_flags(license_obj: dict | None) -> tuple[int, str]:
     return 1, (license_obj or {}).get("spdxId") or key
 
 
-def auth_ok(host: str = "") -> tuple[bool, str]:
+def auth_ok(host: str = "", gh_binary: str = "gh") -> tuple[bool, str]:
     """先查登录态：未登录时搜索会失败，提前给出可执行的修复提示。
 
     默认只查检索要用的那一个 host（`--gh-host` > `GH_HOST` > github.com）：
     `gh auth status` 在任一已配置 host 失效时会整体返回非零，不限定 host 会把
     "另一个企业域名掉线"误报成本仓库不可用。要查企业 host 时用 `--gh-host` 或
-    `GH_HOST` 显式指定；函数参数同优先级最高。
+    `GH_HOST` 显式指定；函数参数同优先级最高。`gh_binary` 由调用方传入，保证
+    auth 检查与检索使用同一个可执行文件。
     """
     target = (host or os.environ.get("GH_HOST") or "github.com").strip()
     try:
         proc = subprocess.run(
-            ["gh", "auth", "status", "-h", target],
+            [gh_binary, "auth", "status", "-h", target],
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -320,7 +321,8 @@ def main() -> int:
         return 2
 
     gh_host = args.gh_host.strip()
-    if not shutil.which("gh"):
+    gh_binary = shutil.which("gh")
+    if not gh_binary:
         print(
             "未找到 gh CLI。安装 GitHub CLI 并 `gh auth login` 后重试；"
             "没有 gh 时改用 references/discovery-playbook.md 的网页检索串。",
@@ -328,7 +330,7 @@ def main() -> int:
         )
         return 2
 
-    ok, why = auth_ok(gh_host)
+    ok, why = auth_ok(gh_host, gh_binary=gh_binary)
     if not ok:
         print(f"{AUTH_HINT}\n详情：{why}", file=sys.stderr)
         return 2
@@ -336,7 +338,8 @@ def main() -> int:
     merged: dict[str, dict] = {}
     failed = []
     for kw in args.keywords:
-        rows, hit = scan(kw, args.stars, args.updated_since, args.limit, host=gh_host)
+        rows, hit = scan(kw, args.stars, args.updated_since, args.limit,
+                         gh_binary=gh_binary, host=gh_host)
         if not hit:
             failed.append(kw)
         for row in rows:

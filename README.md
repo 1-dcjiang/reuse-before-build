@@ -1,6 +1,6 @@
 # reuse-before-build
 
-**Version 1.2.5** · MIT · [CHANGELOG](CHANGELOG.md)
+**Version 1.2.6** · MIT · [CHANGELOG](CHANGELOG.md)
 
 > An AI agent skill: **before writing a new program, search for the existing open-source implementation and join that repo as a public contributor — instead of shipping a worse duplicate.**
 
@@ -163,7 +163,7 @@ Check the script without network:
 python -m unittest discover -s tests -v
 ```
 
-Current suite: **58 tests**, all offline; `ruff check .` is green. For a GitHub Enterprise host, pass `--gh-host ghe.example.com` (or set `GH_HOST`); the same host is used for both the auth check and the search subprocess.
+Current suite: **63 tests**, all offline; `ruff check .` is green. For a GitHub Enterprise host, pass `--gh-host ghe.example.com` (or set `GH_HOST`); the same host is used for both the auth check and the search subprocess.
 
 ## Three red lines
 
@@ -179,7 +179,7 @@ MIT, see [LICENSE](LICENSE).
 
 # 先复用，再新建（中文）
 
-**版本 1.2.5** · MIT · [变更记录](CHANGELOG.md)
+**版本 1.2.6** · MIT · [变更记录](CHANGELOG.md)
 
 > 一个面向 AI 编程助手的 Skill：**在写新程序之前，先去找已经存在的公开实现，并优先加入那个仓库、成为公共贡献者，而不是从零再造一个。**
 

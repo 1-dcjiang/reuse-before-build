@@ -141,8 +141,22 @@ class TestHelpers(unittest.TestCase):
         argv = run_mock.call_args.args[0]
         self.assertIn("ghe.example.com", argv)
 
+    def test_auth_ok_uses_gh_binary(self):
+        exc = subprocess.CompletedProcess(["custom-gh"], 0, "", "")
+        with unittest.mock.patch.object(repo_scan.subprocess, "run", return_value=exc) as run_mock:
+            ok, why = repo_scan.auth_ok("ghe.example.com", gh_binary="custom-gh")
+        self.assertTrue(ok)
+        self.assertEqual(why, "")
+        self.assertEqual(run_mock.call_args.args[0][0], "custom-gh")
+
+    def test_gh_json_uses_gh_host_env(self):
+        exc = subprocess.CompletedProcess(["gh"], 0, "[]", "")
+        with unittest.mock.patch.object(repo_scan.subprocess, "run", return_value=exc) as run_mock:
+            repo_scan.gh_json(["search"], host="ghe.example.com")
+        self.assertEqual(run_mock.call_args.kwargs["env"]["GH_HOST"], "ghe.example.com")
+
     def test_version_is_exposed(self):
-        self.assertEqual(repo_scan.__version__, "1.2.5")
+        self.assertEqual(repo_scan.__version__, "1.2.6")
 
     def test_cli_argument_validators(self):
         self.assertEqual(repo_scan._stars_arg("0"), 0)
@@ -229,15 +243,18 @@ class TestOutputs(unittest.TestCase):
 
     def _run_stubbed(self, keywords, extra_args, scan_result):
         old_argv, old_auth, old_scan = sys.argv, repo_scan.auth_ok, repo_scan.scan
+        old_which = shutil.which
         try:
             repo_scan.auth_ok = lambda *args, **kwargs: (True, "")
             repo_scan.scan = lambda kw, s, u, lim, **kwargs: scan_result
+            repo_scan.shutil.which = lambda name: "gh"
             sys.argv = [SCRIPT, *keywords, *extra_args]
             err, out = io.StringIO(), io.StringIO()
             with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
                 code = repo_scan.main()
         finally:
             sys.argv, repo_scan.auth_ok, repo_scan.scan = old_argv, old_auth, old_scan
+            repo_scan.shutil.which = old_which
         return code, out.getvalue(), err.getvalue()
 
     def test_md_and_json_out_are_written(self):
@@ -276,6 +293,45 @@ class TestOutputs(unittest.TestCase):
         self.assertFalse(os.path.exists(outside))
         self.assertIn("--out-dir", err)
 
+    def test_json_absolute_output_outside_out_dir_is_rejected(self):
+        outside = os.path.join(os.path.dirname(self.tmp), "escape.json")
+        code, _, err = self._run_stubbed(["kw"], ["--json-out", outside], ([], True))
+        self.assertEqual(code, 2)
+        self.assertFalse(os.path.exists(outside))
+        self.assertIn("--out-dir", err)
+
+    def test_symlink_escape_is_rejected(self):
+        outside = tempfile.mkdtemp(prefix="rbb_outside_")
+        self.addCleanup(shutil.rmtree, outside, True)
+        link = os.path.join(self.tmp, "link")
+        try:
+            if os.name == "nt":
+                proc = subprocess.run(["cmd", "/c", "mklink", "/J", link, outside],
+                                      capture_output=True, text=True)
+                if proc.returncode != 0:
+                    self.skipTest(f"无法创建目录链接：{proc.stderr.strip()}")
+            else:
+                os.symlink(outside, link, target_is_directory=True)
+        except (OSError, NotImplementedError) as exc:
+            self.skipTest(f"无法创建符号链接：{exc}")
+
+        def _remove_link():
+            if not os.path.lexists(link):
+                return
+            if os.name == "nt":
+                os.rmdir(link)
+            else:
+                os.unlink(link)
+
+        self.addCleanup(_remove_link)
+
+        code, _, err = self._run_stubbed(
+            ["kw"], ["--out-dir", self.tmp, "--json-out", os.path.join("link", "escape.json")],
+            ([], True))
+        self.assertEqual(code, 2)
+        self.assertFalse(os.path.exists(os.path.join(outside, "escape.json")))
+        self.assertIn("--out-dir", err)
+
     def test_dotdot_escape_is_rejected(self):
         with self.assertRaises(ValueError):
             repo_scan._safe_out_path(os.path.join("..", "escape.md"), self.tmp, "--md-out")
@@ -297,6 +353,25 @@ class TestOutputs(unittest.TestCase):
             ([], True))
         self.assertEqual(code, 2)
         self.assertIn("同一个文件", err)
+
+    def test_gh_host_is_forwarded_to_auth_and_scan(self):
+        captured = {}
+        old_argv = sys.argv
+        old_auth, old_scan, old_which = repo_scan.auth_ok, repo_scan.scan, shutil.which
+        try:
+            repo_scan.auth_ok = lambda host="", **kwargs: (captured.update(auth=host) or True, "")
+            repo_scan.scan = lambda kw, s, u, lim, **kwargs: (
+                captured.update(scan=kwargs.get("host")) or [], True)
+            repo_scan.shutil.which = lambda name: "gh"
+            sys.argv = [SCRIPT, "kw", "--gh-host", "ghe.example.com"]
+            err, out = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
+                code = repo_scan.main()
+        finally:
+            sys.argv, repo_scan.auth_ok, repo_scan.scan = old_argv, old_auth, old_scan
+            repo_scan.shutil.which = old_which
+        self.assertEqual(code, 0)
+        self.assertEqual(captured, {"auth": "ghe.example.com", "scan": "ghe.example.com"})
 
 
 class TestCli(unittest.TestCase):
