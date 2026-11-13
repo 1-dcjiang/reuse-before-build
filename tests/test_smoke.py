@@ -18,6 +18,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -94,6 +95,29 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(len(rows), 2)
         self.assertEqual(rows[0]["owner"]["login"], "owner")
         self.assertEqual(rows[0]["license"]["spdxId"], "MIT")
+
+    def test_non_dict_json_rows_are_dropped(self):
+        self.assertEqual(repo_scan.parse_search_output('[1, "x", {"url": "u"}]'), [{"url": "u"}])
+
+    def test_naive_pushed_at_does_not_crash(self):
+        self.assertEqual(repo_scan.activity_points("2026-10-01T00:00:00"), 0)
+
+    def test_permission_error_becomes_runtime_error(self):
+        with unittest.mock.patch.object(repo_scan.subprocess, "run",
+                                        side_effect=PermissionError("denied")):
+            with self.assertRaises(RuntimeError) as ctx:
+                repo_scan.gh_json(["search"], 5)
+        self.assertIn("gh 启动失败", str(ctx.exception))
+
+    def test_gh_stderr_is_redacted(self):
+        exc = subprocess.CompletedProcess(
+            ["gh"], 1, "", "token=ghp_abcdefghijklmnopqrstuvwxyz0123456789 denied"
+        )
+        with unittest.mock.patch.object(repo_scan.subprocess, "run", return_value=exc):
+            with self.assertRaises(RuntimeError) as ctx:
+                repo_scan.gh_json(["search"], 5)
+        self.assertNotIn("ghp_abcdefghijklmnopqrstuvwxyz", str(ctx.exception))
+        self.assertIn("[redacted]", str(ctx.exception))
 
 
 class TestGhContract(unittest.TestCase):

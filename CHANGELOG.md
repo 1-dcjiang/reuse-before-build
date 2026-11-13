@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.3 — 2026-11-14
+
+按第二轮第三方复查同步 `scripts/repo_scan.py` 的同类加固：
+
+- `gh_json` / `auth_ok` 统一捕获 `OSError`（含 `PermissionError`），子进程启动失败转成可读 `RuntimeError`。
+- stderr 回显前经 `redact_text()` 去掉 token/口令与本机绝对路径。
+- `parse_search_output` 只保留 dict 行，非 dict 的 `--json` 输出不再让后续 `row.get` 崩。
+- `activity_points` 把 `now - pushed` 纳入 `try`，无时区时间抛 `TypeError` 时返回 0。
+- 去重键 `url` / `full_name` 都空时直接跳过，不再合并成一条无来源候选。
+- 新增非 dict JSON、无时区时间、PermissionError、stderr 脱敏回归；48 tests OK，ruff check 全绿。
+- 规则本体、契约哈希、四段提示词 sha256 均未变。
+
 ## 1.2.2 — 2026-11-14
 
 - **`gh` 参数注入**：`scripts/repo_scan.py` 的 `gh search repos` 改为所有选项前置、检索串放在 `--` 之后；`-foo` 这类关键词不再被当成选项。
