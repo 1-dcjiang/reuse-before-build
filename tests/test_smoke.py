@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import contextlib
 import datetime as dt
+import argparse
 import io
 import json
 import os
@@ -101,6 +102,29 @@ class TestHelpers(unittest.TestCase):
 
     def test_naive_pushed_at_does_not_crash(self):
         self.assertEqual(repo_scan.activity_points("2026-10-01T00:00:00"), 0)
+
+    def test_non_string_pushed_at_does_not_crash(self):
+        self.assertEqual(repo_scan.activity_points(123), 0)
+        self.assertEqual(repo_scan.activity_points(["2026-10-01"]), 0)
+
+    def test_bad_json_stdout_is_redacted(self):
+        with self.assertRaises(RuntimeError) as ctx:
+            repo_scan.parse_search_output("not-json api_key=abc123")
+        self.assertNotIn("abc123", str(ctx.exception))
+        self.assertIn("[redacted]", str(ctx.exception))
+
+    def test_cli_argument_validators(self):
+        self.assertEqual(repo_scan._stars_arg("0"), 0)
+        self.assertEqual(repo_scan._limit_arg("10"), 10)
+        self.assertEqual(repo_scan._since_arg("2025-01-01"), "2025-01-01")
+        for bad in ("-1", "1000001"):
+            with self.assertRaises(argparse.ArgumentTypeError):
+                repo_scan._stars_arg(bad)
+        for bad in ("0", "11"):
+            with self.assertRaises(argparse.ArgumentTypeError):
+                repo_scan._limit_arg(bad)
+        with self.assertRaises(argparse.ArgumentTypeError):
+            repo_scan._since_arg("2025/01/01")
 
     def test_permission_error_becomes_runtime_error(self):
         with unittest.mock.patch.object(repo_scan.subprocess, "run",

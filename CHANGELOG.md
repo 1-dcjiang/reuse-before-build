@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.4 — 2026-11-14
+
+按第三轮复查（8.3 / 10）同步主仓扫描器：
+
+- 脱敏正则新增 `Bearer`、`api_key`、`access_token`、`Authorization`；坏 JSON 的 stdout 片段也过 `redact_text()`。
+- `activity_points` 先判 `isinstance(str)`，数字/列表不再让 `.replace` 抛 `AttributeError`。
+- CLI 参数校验：`--stars` 限制 0..1,000,000，`--limit` 限制 1..10，`--updated-since` 必须是 `YYYY-MM-DD`。
+- 新增非字符串 `pushedAt`、坏 JSON stdout 脱敏、CLI 参数校验回归；51 tests OK，ruff check 全绿。
+- 规则本体、契约哈希、四段提示词 sha256 均未变。
+
 ## 1.2.3 — 2026-11-14
 
 按第二轮第三方复查同步 `scripts/repo_scan.py` 的同类加固：
