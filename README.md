@@ -47,8 +47,12 @@ discover (GitHub / package ecosystem / issue archaeology)
    ↓
 score six dimensions: activity · responsiveness · license · contribution friendliness · fit · code quality
    ↓
+modifiability gate: green (optimise upstream) · yellow (extend behind an adapter) · red (never Join)
+   ↓
 Join (PR upstream) → Extend (official plugin) → Fork (PR back) → Build (state the reason)
 ```
+
+Execution discipline: **branch first, never push to the default branch** — even on your own repos; "main has something worth optimising" changes which files you touch, not the branch rule. When you call upstream instead of patching it, integrate through a **stable seam + one thin adapter** (≤ ~150 lines, contract tests), never through upstream internals.
 
 ## Contents
 
@@ -56,8 +60,9 @@ Join (PR upstream) → Extend (official plugin) → Fork (PR back) → Build (st
 SKILL.md                               canonical procedure (English), two lanes, hard constraints
 references/zh-guide.md                 full Chinese edition of SKILL.md
 references/discovery-playbook.md       three search rounds: GitHub qualifiers, gh commands, plugin markets, issue archaeology
-references/repo-triage.md              six-dimension scoring + license compatibility + red flags
-references/contribution-protocol.md    issue → PR flow, PR template, downgrade paths, anti-patterns
+references/repo-triage.md              six-dimension scoring + license compatibility + red flags + modifiability (spaghetti) gate
+references/contribution-protocol.md    issue → PR flow, branch discipline, PR template, downgrade paths, anti-patterns
+references/integration-seam.md         stable integration seams ranked, thin adapter rules, four acceptance checks
 references/worked-examples.md          Join / Extend / Fork / Build deliverables + one counter-example
 references/host-adapters.md            per-host placement, rule-file names, paste-ready prompts (EN + 中文)
 scripts/repo_scan.py                   batch gh search, dedupe, flag no-license and stalled repos
@@ -180,8 +185,12 @@ AI 现在最常见的失败不是"写不出代码"，而是**在别人已经做�
    ↓
 六维打分：活跃度 · 维护者响应 · 许可 · 贡献友好度 · 需求匹配 · 工程质量
    ↓
+可改性硬闸：绿（优先优化上游）· 黄（隔适配层 Extend）· 红（不许 Join）
+   ↓
 Join 提 PR 进上游 → Extend 做官方插件 → Fork 改完回提 → Build 新建（须写明理由）
 ```
+
+执行纪律：**分支优先，绝不直推默认分支**——自己的仓库也一样；"主干有可优化的地方"改变的是你动哪些文件，不是这条规则。调用上游能力时走**稳定接入口 + 一层薄适配**（约 ≤150 行、带契约测试），不让业务代码碰上游内部实现。
 
 ## 中文安装
 
