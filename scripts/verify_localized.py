@@ -59,8 +59,8 @@ def extract_block(text: str, begin: str, end: str) -> str | None:
             continue
         fenced.append(in_fence)
 
-    begins = [i for i, l in enumerate(lines) if not fenced[i] and _marker_line(l, begin)]
-    ends = [i for i, l in enumerate(lines) if not fenced[i] and _marker_line(l, end)]
+    begins = [i for i, line in enumerate(lines) if not fenced[i] and _marker_line(line, begin)]
+    ends = [i for i, line in enumerate(lines) if not fenced[i] and _marker_line(line, end)]
     candidates: list[str] = []
     for b in begins:
         e = next((x for x in ends if x > b), None)
