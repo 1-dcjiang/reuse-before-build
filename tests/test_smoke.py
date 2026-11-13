@@ -113,6 +113,37 @@ class TestHelpers(unittest.TestCase):
         self.assertNotIn("abc123", str(ctx.exception))
         self.assertIn("[redacted]", str(ctx.exception))
 
+    def test_redaction_patterns(self):
+        cases = [
+            ("ghp_" + "a" * 30, "ghp_" + "a" * 30),
+            ("github_pat_" + "b" * 30, "github_pat_" + "b" * 30),
+            ("Bearer abcdefghij", "abcdefghij"),
+            ("api_key=abc123", "abc123"),
+            ("access_token: abc123", "abc123"),
+            ("Authorization: Basic abc123", "abc123"),
+            ("password=hunter2", "hunter2"),
+            ("https://user:pass@github.com/o/r", "user:pass"),
+            ("https://ghp_secret@github.com/o/r", "ghp_secret"),
+            ("Cookie: sessionid=abc; csrftoken=def", "sessionid"),
+        ]
+        for raw, secret in cases:
+            with self.subTest(raw=raw):
+                out = repo_scan.redact_text(raw)
+                self.assertNotIn(secret, out)
+                self.assertIn("[redacted]", out)
+
+    def test_auth_ok_uses_explicit_host(self):
+        exc = subprocess.CompletedProcess(["gh"], 0, "", "")
+        with unittest.mock.patch.object(repo_scan.subprocess, "run", return_value=exc) as run_mock:
+            ok, why = repo_scan.auth_ok("ghe.example.com")
+        self.assertTrue(ok)
+        self.assertEqual(why, "")
+        argv = run_mock.call_args.args[0]
+        self.assertIn("ghe.example.com", argv)
+
+    def test_version_is_exposed(self):
+        self.assertEqual(repo_scan.__version__, "1.2.5")
+
     def test_cli_argument_validators(self):
         self.assertEqual(repo_scan._stars_arg("0"), 0)
         self.assertEqual(repo_scan._limit_arg("10"), 10)
@@ -199,8 +230,8 @@ class TestOutputs(unittest.TestCase):
     def _run_stubbed(self, keywords, extra_args, scan_result):
         old_argv, old_auth, old_scan = sys.argv, repo_scan.auth_ok, repo_scan.scan
         try:
-            repo_scan.auth_ok = lambda: (True, "")
-            repo_scan.scan = lambda kw, s, u, lim: scan_result
+            repo_scan.auth_ok = lambda *args, **kwargs: (True, "")
+            repo_scan.scan = lambda kw, s, u, lim, **kwargs: scan_result
             sys.argv = [SCRIPT, *keywords, *extra_args]
             err, out = io.StringIO(), io.StringIO()
             with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
@@ -215,7 +246,9 @@ class TestOutputs(unittest.TestCase):
                "url": "https://github.com/o/r", "matched_keyword": "kw"}
         md = os.path.join(self.tmp, "c.md")
         js = os.path.join(self.tmp, "c.json")
-        code, out, _ = self._run_stubbed(["kw"], ["--md-out", md, "--json-out", js], ([row], True))
+        code, out, _ = self._run_stubbed(
+            ["kw"], ["--out-dir", self.tmp, "--md-out", "c.md", "--json-out", "c.json"],
+            ([row], True))
         self.assertEqual(code, 0)
         self.assertTrue(os.path.exists(md))
         with open(md, encoding="utf-8") as fh:
@@ -228,18 +261,50 @@ class TestOutputs(unittest.TestCase):
     def test_no_files_written_on_rc3(self):
         md = os.path.join(self.tmp, "c.md")
         js = os.path.join(self.tmp, "c.json")
-        code, _, err = self._run_stubbed(["kw"], ["--md-out", md, "--json-out", js], ([], False))
+        code, _, err = self._run_stubbed(
+            ["kw"], ["--out-dir", self.tmp, "--md-out", "c.md", "--json-out", "c.json"],
+            ([], False))
         self.assertEqual(code, 3)
         self.assertFalse(os.path.exists(md))
         self.assertFalse(os.path.exists(js))
         self.assertIn("未写出", err)
+
+    def test_absolute_output_outside_out_dir_is_rejected(self):
+        outside = os.path.join(os.path.dirname(self.tmp), "escape.md")
+        code, _, err = self._run_stubbed(["kw"], ["--md-out", outside], ([], True))
+        self.assertEqual(code, 2)
+        self.assertFalse(os.path.exists(outside))
+        self.assertIn("--out-dir", err)
+
+    def test_dotdot_escape_is_rejected(self):
+        with self.assertRaises(ValueError):
+            repo_scan._safe_out_path(os.path.join("..", "escape.md"), self.tmp, "--md-out")
+
+    def test_existing_output_is_not_overwritten(self):
+        md = os.path.join(self.tmp, "c.md")
+        with open(md, "w", encoding="utf-8") as fh:
+            fh.write("keep me")
+        code, _, err = self._run_stubbed(
+            ["kw"], ["--out-dir", self.tmp, "--md-out", "c.md"], ([], True))
+        self.assertEqual(code, 2)
+        with open(md, encoding="utf-8") as fh:
+            self.assertEqual(fh.read(), "keep me")
+        self.assertIn("拒绝覆盖", err)
+
+    def test_md_and_json_same_file_is_rejected(self):
+        code, _, err = self._run_stubbed(
+            ["kw"], ["--out-dir", self.tmp, "--md-out", "same", "--json-out", "same"],
+            ([], True))
+        self.assertEqual(code, 2)
+        self.assertIn("同一个文件", err)
 
 
 class TestCli(unittest.TestCase):
     def test_help(self):
         proc = run(["--help"])
         self.assertEqual(proc.returncode, 0)
-        for flag in ("--stars", "--updated-since", "--limit", "--md-out", "--json-out"):
+        for flag in ("--stars", "--updated-since", "--limit", "--out-dir", "--gh-host",
+                     "--md-out", "--json-out"):
             self.assertIn(flag, proc.stdout)
 
     def test_missing_keywords(self):
@@ -269,8 +334,8 @@ class TestCli(unittest.TestCase):
         old_argv = sys.argv
         old_auth, old_scan = repo_scan.auth_ok, repo_scan.scan
         try:
-            repo_scan.auth_ok = lambda: (True, "")
-            repo_scan.scan = lambda kw, s, u, lim: ([], False)
+            repo_scan.auth_ok = lambda *args, **kwargs: (True, "")
+            repo_scan.scan = lambda kw, s, u, lim, **kwargs: ([], False)
             sys.argv = [SCRIPT, "obsidian sync plugin"]
             err, out = io.StringIO(), io.StringIO()
             with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
