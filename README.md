@@ -71,6 +71,8 @@ scripts/verify_localized.py            check a localized copy: invariant block, 
 prompt-digests.json                    which prompt text is which version: id + sha256 (history kept)
 localization.contract.json             the machine-readable contract: block hash + required anchors
 tests/test_smoke.py                    offline smoke tests: exit codes, leap-day default, table escaping
+tests/fixtures/gh_search_repos.json    recorded `gh search repos --json` output for the contract test
+CHANGELOG.md                           version history
 ```
 
 ## Install
