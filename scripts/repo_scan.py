@@ -34,6 +34,8 @@ except Exception:
     pass
 
 
+__version__ = "1.2.5"
+
 PERMISSIVE = {"mit", "apache-2.0", "bsd-3-clause", "bsd-2-clause", "isc", "mpl-2.0", "0bsd", "unlicense"}
 
 AUTH_HINT = (
@@ -48,8 +50,12 @@ FAIL_HINT = (
 _SECRET_RX = re.compile(
     r"(?i)(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|"
     r"bearer\s+[A-Za-z0-9._~+/=-]{8,}|"
-    r"(?:access[_-]?token|api[_-]?key|authorization|token|password|secret)\s*[:=]\s*\S+)"
+    r"(?:access[_-]?token|api[_-]?key|token|password|secret)\s*[:=]\s*\S+)"
 )
+# URL userinfo（https://user:pass@host/...）和整行凭据头也要脱敏：
+# 前者常见于把带凭据的仓库地址直接贴进日志，后者常见于 curl 复现命令。
+_URL_CRED_RX = re.compile(r"(?i)(https?://)[^/\s:@]+(?::[^/\s@]*)?@")
+_HEADER_RX = re.compile(r"(?i)((?:cookie|authorization)\s*[:=]\s*)[^\r\n]+")
 
 
 def redact_text(value: object, limit: int = 300) -> str:
@@ -58,6 +64,8 @@ def redact_text(value: object, limit: int = 300) -> str:
     home = os.path.expanduser("~")
     if home:
         text = text.replace(home, "~")
+    text = _URL_CRED_RX.sub(r"\1[redacted]@", text)
+    text = _HEADER_RX.sub(r"\1[redacted]", text)
     text = _SECRET_RX.sub("[redacted]", text)
     return text[:limit]
 
@@ -97,7 +105,12 @@ def parse_search_output(out: str) -> list[dict]:
     return []
 
 
-def gh_json(args: list[str], timeout: float = 60, gh_binary: str = "gh") -> list[dict]:
+def gh_json(args: list[str], timeout: float = 60, gh_binary: str = "gh",
+            host: str = "") -> list[dict]:
+    env = None
+    if host:
+        env = dict(os.environ)
+        env["GH_HOST"] = host
     try:
         proc = subprocess.run(
             [gh_binary, *args],
@@ -107,6 +120,7 @@ def gh_json(args: list[str], timeout: float = 60, gh_binary: str = "gh") -> list
             errors="replace",
             timeout=timeout,
             shell=False,
+            env=env,
         )
     except FileNotFoundError:
         raise RuntimeError("gh 可执行文件不在了（PATH 变了？）") from None
@@ -127,10 +141,11 @@ def search_args(keyword: str, stars: int, updated_since: str, limit: int) -> lis
 
 
 def scan(keyword: str, stars: int, updated_since: str, limit: int,
-         gh_binary: str = "gh") -> tuple[list[dict], bool]:
+         gh_binary: str = "gh", host: str = "") -> tuple[list[dict], bool]:
     """返回 (rows, ok)。ok=False 表示这个关键词的检索本身失败，不是"没搜到"。"""
     try:
-        rows = gh_json(search_args(keyword, stars, updated_since, limit), gh_binary=gh_binary)
+        rows = gh_json(search_args(keyword, stars, updated_since, limit),
+                       gh_binary=gh_binary, host=host)
     except RuntimeError as exc:
         print(f"[warn] 关键词 {keyword!r} 检索失败：{exc}", file=sys.stderr)
         return [], False
@@ -165,17 +180,18 @@ def license_flags(license_obj: dict | None) -> tuple[int, str]:
     return 1, (license_obj or {}).get("spdxId") or key
 
 
-def auth_ok() -> tuple[bool, str]:
+def auth_ok(host: str = "") -> tuple[bool, str]:
     """先查登录态：未登录时搜索会失败，提前给出可执行的修复提示。
 
-    只查检索要用的那一个 host（GH_HOST 优先，否则 github.com）：`gh auth status`
-    在任一已配置 host 失效时会整体返回非零，不限定 host 会把"另一个企业域名掉线"
-    误报成本仓库不可用。
+    默认只查检索要用的那一个 host（`--gh-host` > `GH_HOST` > github.com）：
+    `gh auth status` 在任一已配置 host 失效时会整体返回非零，不限定 host 会把
+    "另一个企业域名掉线"误报成本仓库不可用。要查企业 host 时用 `--gh-host` 或
+    `GH_HOST` 显式指定；函数参数同优先级最高。
     """
-    host = os.environ.get("GH_HOST") or "github.com"
+    target = (host or os.environ.get("GH_HOST") or "github.com").strip()
     try:
         proc = subprocess.run(
-            ["gh", "auth", "status", "-h", host],
+            ["gh", "auth", "status", "-h", target],
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -191,7 +207,7 @@ def auth_ok() -> tuple[bool, str]:
         return False, f"gh 启动失败：{redact_text(exc, 200)}"
     if proc.returncode != 0:
         detail = (proc.stderr or proc.stdout or "").strip().splitlines()
-        return False, f"{host}：{redact_text(detail[0], 200) if detail else 'gh auth status 返回非零'}"
+        return False, f"{target}：{redact_text(detail[0], 200) if detail else 'gh auth status 返回非零'}"
     return True, ""
 
 
@@ -246,6 +262,35 @@ def _since_arg(value: str) -> str:
     return value
 
 
+def _out_root(value: str) -> str:
+    root = os.path.abspath(value or ".")
+    if not os.path.isdir(root):
+        raise ValueError(f"--out-dir 不是已存在的目录：{root}")
+    return os.path.realpath(root)
+
+
+def _safe_out_path(value: str, root: str, flag: str) -> str:
+    """把 --md-out / --json-out 限定在输出根目录内，并拒绝覆盖已有文件。
+
+    绝对路径也必须在 root 内；`..` 与符号链接逃逸用 realpath + commonpath 判定。
+    返回绝对路径；空值返回空串。
+    """
+    if not value:
+        return ""
+    candidate = os.path.abspath(value if os.path.isabs(value) else os.path.join(root, value))
+    real_root = os.path.realpath(root)
+    real_candidate = os.path.realpath(candidate)
+    try:
+        inside = os.path.commonpath([real_root, real_candidate]) == real_root
+    except ValueError:  # Windows 跨盘符
+        inside = False
+    if not inside:
+        raise ValueError(f"{flag} 必须写在 --out-dir（{root}）内，拒绝写到：{candidate}")
+    if os.path.lexists(candidate):
+        raise ValueError(f"{flag} 指向已存在的文件，拒绝覆盖：{candidate}")
+    return candidate
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="GitHub 候选仓库粗筛（reuse-before-build）")
     parser.add_argument("keywords", nargs="+", help="一个或多个检索串（英文效果最好）")
@@ -257,10 +302,24 @@ def main() -> int:
         help="最近推送日期下限，默认一年前（YYYY-MM-DD）",
     )
     parser.add_argument("--limit", type=_limit_arg, default=8, help="每个关键词返回条数，默认 8")
-    parser.add_argument("--md-out", default="", help="把 Markdown 表格写入该文件")
-    parser.add_argument("--json-out", default="", help="把原始结果写入该 JSON 文件")
+    parser.add_argument("--out-dir", default=".", help="输出根目录，默认当前目录；--md-out/--json-out 必须位于其下")
+    parser.add_argument("--gh-host", default="", help="GitHub host，默认 GH_HOST 或 github.com")
+    parser.add_argument("--md-out", default="", help="把 Markdown 表格写入该文件（相对 --out-dir）")
+    parser.add_argument("--json-out", default="", help="把原始结果写入该 JSON 文件（相对 --out-dir）")
     args = parser.parse_args()
 
+    try:
+        out_root = _out_root(args.out_dir)
+        md_path = _safe_out_path(args.md_out, out_root, "--md-out")
+        json_path = _safe_out_path(args.json_out, out_root, "--json-out")
+    except ValueError as exc:
+        print(f"[error] {exc}", file=sys.stderr)
+        return 2
+    if md_path and json_path and os.path.normcase(md_path) == os.path.normcase(json_path):
+        print("[error] --md-out 与 --json-out 不能指向同一个文件", file=sys.stderr)
+        return 2
+
+    gh_host = args.gh_host.strip()
     if not shutil.which("gh"):
         print(
             "未找到 gh CLI。安装 GitHub CLI 并 `gh auth login` 后重试；"
@@ -269,7 +328,7 @@ def main() -> int:
         )
         return 2
 
-    ok, why = auth_ok()
+    ok, why = auth_ok(gh_host)
     if not ok:
         print(f"{AUTH_HINT}\n详情：{why}", file=sys.stderr)
         return 2
@@ -277,7 +336,7 @@ def main() -> int:
     merged: dict[str, dict] = {}
     failed = []
     for kw in args.keywords:
-        rows, hit = scan(kw, args.stars, args.updated_since, args.limit)
+        rows, hit = scan(kw, args.stars, args.updated_since, args.limit, host=gh_host)
         if not hit:
             failed.append(kw)
         for row in rows:
@@ -307,7 +366,7 @@ def main() -> int:
 
     if failed and len(failed) == len(args.keywords):
         print(f"AUTH/网络问题：{len(failed)} 个关键词全部检索失败。{FAIL_HINT}", file=sys.stderr)
-        if args.md_out or args.json_out:
+        if md_path or json_path:
             print("检索失败，未写出 --md-out / --json-out（没有可用结果，避免空的候选表被当成'查过了'）。",
                   file=sys.stderr)
         return 3
@@ -330,12 +389,19 @@ def main() -> int:
             file=sys.stderr,
         )
 
-    if args.md_out:
-        with open(args.md_out, "w", encoding="utf-8", newline="\n") as fh:
-            fh.write(table + "\n")
-    if args.json_out:
-        with open(args.json_out, "w", encoding="utf-8", newline="\n") as fh:
-            json.dump(rows, fh, ensure_ascii=False, indent=2)
+    try:
+        if md_path:
+            with open(md_path, "x", encoding="utf-8", newline="\n") as fh:
+                fh.write(table + "\n")
+        if json_path:
+            with open(json_path, "x", encoding="utf-8", newline="\n") as fh:
+                json.dump(rows, fh, ensure_ascii=False, indent=2)
+    except FileExistsError:
+        print("[error] 输出文件在写入前被别人创建，拒绝覆盖；请换一个文件名。", file=sys.stderr)
+        return 2
+    except OSError as exc:
+        print(f"[error] 写输出文件失败：{redact_text(exc, 200)}", file=sys.stderr)
+        return 2
     return 0
 
 

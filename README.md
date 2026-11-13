@@ -1,5 +1,7 @@
 # reuse-before-build
 
+**Version 1.2.5** · MIT · [CHANGELOG](CHANGELOG.md)
+
 > An AI agent skill: **before writing a new program, search for the existing open-source implementation and join that repo as a public contributor — instead of shipping a worse duplicate.**
 
 Ask for "a tool that cuts long videos into shorts" and the model writes a 1,400-line framework. Three maintained repos already do that, and one has an issue saying *PRs welcome*.
@@ -153,13 +155,15 @@ Exit codes are deliberate:
 | `2` | gh unusable — missing, not signed in, or host unreachable |
 | `3` | gh works but every search failed (rate limit, transient error) |
 
-On `2` or `3` the script writes **no** `--md-out` / `--json-out` file, so a downstream reader cannot mistake an empty table for "already checked".
+On `2` or `3` the script writes **no** `--md-out` / `--json-out` file, so a downstream reader cannot mistake an empty table for "already checked". `--md-out` / `--json-out` are treated as relative to `--out-dir` (default: the current directory); absolute paths and `..` that escape it are rejected, and an existing file is never overwritten.
 
 Check the script without network:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
+
+Current suite: **58 tests**, all offline; `ruff check .` is green. For a GitHub Enterprise host, pass `--gh-host ghe.example.com` (or set `GH_HOST`); the same host is used for both the auth check and the search subprocess.
 
 ## Three red lines
 
@@ -174,6 +178,8 @@ MIT, see [LICENSE](LICENSE).
 ---
 
 # 先复用，再新建（中文）
+
+**版本 1.2.5** · MIT · [变更记录](CHANGELOG.md)
 
 > 一个面向 AI 编程助手的 Skill：**在写新程序之前，先去找已经存在的公开实现，并优先加入那个仓库、成为公共贡献者，而不是从零再造一个。**
 
