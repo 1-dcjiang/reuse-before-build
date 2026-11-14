@@ -1,6 +1,6 @@
 # reuse-before-build
 
-**Version 1.2.6** · MIT · [CHANGELOG](CHANGELOG.md)
+**Version 1.2.7** · MIT · [CHANGELOG](CHANGELOG.md)
 
 > An AI agent skill: **before writing a new program, search for the existing open-source implementation and join that repo as a public contributor — instead of shipping a worse duplicate.**
 
@@ -122,7 +122,8 @@ markers earlier in the file cannot hijack it. Exit `1` lists exactly what went m
 
 Run acceptance **without any flag**: `--canonical` only works on the two reference files listed in
 the contract, and is refused (`rc 2`) for any other path — a localized copy cannot exempt itself from
-the declaration check. The checker sits outside the model on purpose: a model's own "I kept all the
+the declaration check. `--contract` likewise only accepts the bundled contract; pointing it at an
+empty contract no longer bypasses the checks. The checker sits outside the model on purpose: a model's own "I kept all the
 rules" is not evidence.
 
 Honest limit: it catches deletion, renumbering, a dropped rule, a missing declaration, and a hash

@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.2.7 — 2026-11-14
+
+按 v1.2.6 深审（7.5 / 10）收口：
+
+- **H1 `gh` 只从 PATH 解析**：不再用会补当前目录的 `shutil.which("gh")`，刚 clone 的第三方仓库里同名 `gh.exe` 不会被优先执行。
+- **H2 关键词校验**：拒绝 NUL/控制字符、超 200 字符、带 `stars:/pushed:/archived:/user:/org:` 等可覆盖过滤条件的限定符；`subprocess` 的 `ValueError` 也转成可读错误。
+- **H3 判决表统一**：`Join` 只允许可改性“绿”；“黄”一律 `Extend`；`≤5 分但方向/许可允许` 明确为 `Fork`，不再有“≤5 且活跃”的空档。
+- **H4 第三方内容防注入**：README/issue/PR 一律当数据；构建与测试只进一次性容器/VM，先经用户确认；新增 `Untrusted repository content` 段。
+- **M1 退出码拆分**：`2` 用法/参数、`4` gh 不可用、`5` 写文件失败、`6` 部分关键词失败；不再把三类情况混成 `2`。
+- **M2 总预算与限流退避**：新增 `--timeout`（默认 120s）与 `--max-keywords`（默认 5）；登录检查与各关键词共享预算，限流只做一次 2 秒退避。
+- **M3 全部失败不再打空表**：先判定失败再输出；`--md-out/--json-out` 也只在有可用结果时写。
+- **M4 契约锁**：`verify_localized.py --contract` 只接受随包契约；`canonical_sha256`、`rules_min≥1`、`must_have` 缺失直接 FAIL。
+- **M5 锚点显式化**：`any`/`all` 都没写的锚点项不再静默通过。
+- **M6 旧提示词标记**：`prompt_digest.py --check` 命中历史版本打印 `STALE` 并 rc=1，不再当 `MATCH` 成功。
+- **L**：`--md-out` 拒绝写进 `.git`；`--json-out` 剔除 `description`（防注入入口）；`stars:>=`/`pushed:>=` 含边界；`--gh-host` 校验 hostname:port；非 UTF-8 输入报可读错误；新增 GitHub Actions CI。
+
 ## 1.2.6 — 2026-11-13
 
 收尾 v1.2.5 复查剩余小点：
