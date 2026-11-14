@@ -13,8 +13,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install ruff
-        run: python -m pip install --upgrade pip ruff==0.12.4
+      - name: Install test tools
+        run: python -m pip install --upgrade pip ruff==0.12.4 pytest
       - name: Lint
         run: ruff check .
       - name: Offline tests
