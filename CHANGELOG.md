@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.8 — 2026-11-14
+
+按“三个仓库各自要优化什么”里 rbb 的第 1、4 条收口，不改规则本体：
+
+- **发布形态**：新增 `scripts/make_release_bundle.py`，从 tag 生成 `reuse-before-build-v<version>.zip`、`integration-seam.md` 与 `SHA256SUMS`；Release 开始附带可校验的 vendor 包。
+- **重复版本**：`scripts/verify_localized.py` 删掉被覆盖的 `__version__ = "1.2.6"`，只保留一个 `1.2.8`。
+- 版本标记同步：`SKILL.md`、`README.md`、`repo_scan.py`、`prompt_digest.py`、`test_smoke.py`。
+
 ## 1.2.7 — 2026-11-14
 
 按 v1.2.6 深审（7.5 / 10）收口：

@@ -1,6 +1,6 @@
 ---
 name: reuse-before-build
-version: 1.2.7
+version: 1.2.8
 license: MIT
 description: 用户说“帮我写一个…工具/脚本/插件/服务”“做一个和 X 一样的程序”“有没有现成的开源项目”“从零实现一个”，或说 upstream this fix、提 PR 时使用：先检索 GitHub 与包生态里已有同用途实现，按活跃度、许可、贡献友好度评估，优先加入该仓库当公共贡献者，而不是新建更差的重复品。只有要私有/闭源代码、许可禁止再分发时才跳过。Before writing any new program, script, library, plugin or service, search GitHub for an existing implementation and contribute upstream instead of shipping a duplicate, e.g. “build me a tool”, “write a script that…”, “is there an existing project for this”, “implement X from scratch”, “open a PR”.
 ---

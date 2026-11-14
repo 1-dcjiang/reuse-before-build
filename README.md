@@ -1,6 +1,6 @@
 # reuse-before-build
 
-**Version 1.2.7** · MIT · [CHANGELOG](CHANGELOG.md)
+**Version 1.2.8** · MIT · [CHANGELOG](CHANGELOG.md)
 
 > An AI agent skill: **before writing a new program, search for the existing open-source implementation and join that repo as a public contributor — instead of shipping a worse duplicate.**
 
@@ -75,6 +75,26 @@ localization.contract.json             the machine-readable contract: block hash
 tests/test_smoke.py                    offline smoke tests: exit codes, leap-day default, table escaping
 tests/fixtures/gh_search_repos.json    recorded `gh search repos --json` output for the contract test
 CHANGELOG.md                           version history
+```
+
+## Vendored release assets
+
+Each tag publishes a verifiable bundle for downstream vendors:
+
+- `reuse-before-build-v<version>.zip` — a clean `git archive` snapshot of the tag.
+- `integration-seam.md` — the stable-entrypoint / thin-adapter guide.
+- `SHA256SUMS` — SHA-256 for both files.
+
+Verify before unpacking:
+
+```bash
+sha256sum -c SHA256SUMS
+```
+
+Rebuild the same bundle from a checkout:
+
+```bash
+python scripts/make_release_bundle.py --version <version> --out-dir dist
 ```
 
 ## Install
@@ -180,7 +200,7 @@ MIT, see [LICENSE](LICENSE).
 
 # 先复用，再新建（中文）
 
-**版本 1.2.6** · MIT · [变更记录](CHANGELOG.md)
+**版本 1.2.8** · MIT · [变更记录](CHANGELOG.md)
 
 > 一个面向 AI 编程助手的 Skill：**在写新程序之前，先去找已经存在的公开实现，并优先加入那个仓库、成为公共贡献者，而不是从零再造一个。**
 
@@ -219,6 +239,7 @@ Join 提 PR 进上游 → Extend 做官方插件 → Fork 改完回提 → Build
 - **编码代理**：把「严格版」写进仓库根 `AGENTS.md`。
 - **DeepSeek Harness（dsh）**：整个目录放到 `~/.dsh/skills/reuse-before-build/`（或 `~/.agents/skills/`，项目级放 `<仓库>/.dsh/skills/`）。dsh 只扫一层目录，且目录里展示的 description 上限 500 字符——本 skill 已压到 475，中文触发词在前，直接拷不用改。细节见 `references/host-adapters.md` 的「A 类补充」。
 - **自适配**：装到清单里没列过的宿主也没关系——skill 内含自适配规则，会按那个宿主的格式（字段、布局、语言、工具）改包装，规则本身不动。
+- **给下游 vendor**：每个 tag 的 Release 附 `reuse-before-build-v<版本>.zip`、`integration-seam.md` 与 `SHA256SUMS`；解压前先 `sha256sum -c SHA256SUMS`。本地重打包用 `python scripts/make_release_bundle.py`。
 
 ## 三条底线
 

@@ -156,7 +156,15 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(run_mock.call_args.kwargs["env"]["GH_HOST"], "ghe.example.com")
 
     def test_version_is_exposed(self):
-        self.assertEqual(repo_scan.__version__, "1.2.7")
+        self.assertEqual(repo_scan.__version__, "1.2.8")
+
+    def test_verify_localized_defines_version_once(self):
+        path = os.path.join(ROOT, "scripts", "verify_localized.py")
+        with open(path, encoding="utf-8") as fh:
+            source = fh.read()
+        matches = re.findall(r"^__version__\s*=", source, re.MULTILINE)
+        self.assertEqual(len(matches), 1)
+        self.assertIn('__version__ = "1.2.8"', source)
 
     def test_cli_argument_validators(self):
         self.assertEqual(repo_scan._stars_arg("0"), 0)

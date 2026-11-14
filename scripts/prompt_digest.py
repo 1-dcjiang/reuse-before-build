@@ -21,7 +21,7 @@ UTF-8 文本、LF 换行、去掉每行行尾空白、去掉首尾空行。
 
 from __future__ import annotations
 
-__version__ = "1.2.7"
+__version__ = "1.2.8"
 
 import argparse
 import hashlib
