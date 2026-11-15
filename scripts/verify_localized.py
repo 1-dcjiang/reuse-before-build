@@ -20,7 +20,7 @@
 
 from __future__ import annotations
 
-__version__ = "1.2.9"
+__version__ = "1.2.10"
 
 import argparse
 import hashlib
@@ -37,6 +37,17 @@ except Exception:
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_CONTRACT = os.path.join(os.path.dirname(HERE), "localization.contract.json")
+# 随包英文正典的基线钉在代码里，不能只相信同目录、同样可被改写的契约。
+CANONICAL_SHA256 = "690f0165e1f67fbb771a68c5456dcd35243e1132cfa0b0b9f287caf446143526"
+CANONICAL_RULES_MIN = 5
+CANONICAL_RULE_ANCHOR_IDS = frozenset({"rule_1", "rule_2", "rule_3", "rule_4", "rule_5"})
+CANONICAL_MUST_HAVE_IDS = frozenset({
+    "gate", "verdict_order", "deliverable", "contributing_rule",
+    "public_write_gate", "quick_lane", "untrusted_section",
+    "untrusted_data_not_instructions", "untrusted_container",
+})
+CANONICAL_DECLARATION_KEYS = ("host", "kept", "changed", "unsupported")
+CANONICAL_DECLARATION_WITHIN_LAST = 8
 
 
 def read_text(path: str) -> str:
@@ -158,6 +169,42 @@ def check_anchors(scope: str, items: list[dict], where: str) -> list[str]:
     return missing
 
 
+def id_set(value: object) -> frozenset[str]:
+    """取契约锚点条目的 id 集合；形状不对按空集合处理。"""
+    if not isinstance(value, list):
+        return frozenset()
+    return frozenset(
+        str(item.get("id", ""))
+        for item in value
+        if isinstance(item, dict) and item.get("id")
+    )
+
+
+def check_contract_baseline(contract: dict) -> list[str]:
+    """契约只允许在基线之上收紧，不许把规则条数、锚点或声明字段悄悄改松。"""
+    missing: list[str] = []
+    try:
+        rules_min = int(contract.get("rules_min", 0))
+    except (TypeError, ValueError):
+        rules_min = 0
+    if rules_min != CANONICAL_RULES_MIN:
+        missing.append(f"rules_min:{rules_min}!={CANONICAL_RULES_MIN}")
+    if id_set(contract.get("rule_anchors")) != CANONICAL_RULE_ANCHOR_IDS:
+        missing.append("rule_anchor_ids")
+    if id_set(contract.get("must_have")) != CANONICAL_MUST_HAVE_IDS:
+        missing.append("must_have_ids")
+    declaration = contract.get("declaration") or {}
+    if tuple(declaration.get("keys") or ()) != CANONICAL_DECLARATION_KEYS:
+        missing.append("declaration_keys")
+    try:
+        within_last = int(declaration.get("within_last", 0))
+    except (TypeError, ValueError):
+        within_last = 0
+    if within_last != CANONICAL_DECLARATION_WITHIN_LAST:
+        missing.append(f"declaration_within_last:{within_last}!={CANONICAL_DECLARATION_WITHIN_LAST}")
+    return missing
+
+
 def check_declaration(text: str, decl: dict) -> list[str]:
     """声明行必须是文件末尾那条；代码围栏里的示例行不算（SKILL.md 自己就有一段示例）。"""
     prefix = decl.get("prefix", "localized:")
@@ -225,6 +272,15 @@ def main() -> int:
     if not args.print_hash and (rules_floor < 1 or not contract.get("must_have")):
         print("FAIL  contract 的 rules_min 必须 ≥ 1，且 must_have 不能为空")
         return 1
+    if not args.print_hash and want_hash.lower() != CANONICAL_SHA256:
+        print("FAIL  contract 的正典哈希与代码内置基线不一致；拒绝使用被改写的基线。")
+        return 1
+    if not args.print_hash:
+        baseline = check_contract_baseline(contract)
+        if baseline:
+            print("FAIL  contract 基线被放宽")
+            print("MISSING: " + ", ".join(baseline))
+            return 1
 
     block_cfg = contract.get("block", {})
     begin = block_cfg.get("begin", "RBB:INVARIANTS:BEGIN")

@@ -37,7 +37,7 @@ except Exception:
     pass
 
 
-__version__ = "1.2.9"
+__version__ = "1.2.10"
 
 PERMISSIVE = {"mit", "apache-2.0", "bsd-3-clause", "bsd-2-clause", "isc", "mpl-2.0", "0bsd", "unlicense"}
 
@@ -510,8 +510,9 @@ def main() -> int:
                 continue
             if key in merged:
                 if isinstance(merged[key]["matched_keyword"], list):
-                    merged[key]["matched_keyword"].append(kw)
-                else:
+                    if kw not in merged[key]["matched_keyword"]:
+                        merged[key]["matched_keyword"].append(kw)
+                elif merged[key]["matched_keyword"] != kw:
                     merged[key]["matched_keyword"] = [merged[key]["matched_keyword"], kw]
                 continue
             row["matched_keyword"] = kw

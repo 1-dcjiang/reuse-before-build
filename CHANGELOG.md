@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.10 — 2026-11-15
+
+按 neko 插件同源问题自查：
+
+- **契约基线钉进代码**：`verify_localized.py` 内置 `CANONICAL_SHA256`、`rules_min=5`、5 个 `rule_anchors` id、9 个 `must_have` id、4 个声明字段与 `within_last=8`；改松契约会被拒绝，不再只相信可被改写的 `localization.contract.json`。
+- **检索结果去重**：`repo_scan.py` 合并重复关键词时去重，不再输出 `kw, kw`。
+- 新增 `tests/test_reuse_regressions.py`；测试计数 95（另有 26 subtests）。
+- 版本号同步到 `1.2.10`（`SKILL.md`、三个脚本、README、CHANGELOG）。
+
 ## 1.2.9 — 2026-11-15
 
 按《增量复审 1.2.6 → 1.2.8》（7.5 → 8.0）收口：
