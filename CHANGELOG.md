@@ -10,7 +10,7 @@
 - **M1 退出码**：README 的退出码表补 `4`（gh 不可用）、`5`（写文件失败）、`6`（部分关键词失败），并说明各档是否会落盘。
 - **新问题 1**：`make_release_bundle.py` 改为 `git archive v<version>`，要求 tag 存在且指向 HEAD、工作区干净、版本与 `SKILL.md` 一致；拒绝覆盖已存在的 zip / `integration-seam.md` / `SHA256SUMS`。
 - **新问题 2**：新增 `tests/test_release_bundle.py`，覆盖 tag 快照、前缀、`SHA256SUMS` 实际哈希、版本不一致与拒绝覆盖。
-- **新问题 3**：README 测试计数更新为实际的 82 tests（另有 26 subtests）。
+- **新问题 3**：README 测试计数更新为实际的 88 tests（另有 26 subtests）。
 - **新问题 4**：CI 加 `windows-latest` 矩阵、`permissions: contents: read`、第三方 action 固定到 commit SHA、pytest 锁到 `8.4.2`。
 - **新问题 5**：关键词限定符过滤补 `in:`、`forks:`、`followers:`、`has:`、`good-first-issues:` 与括号边界，补测试。
 

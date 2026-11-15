@@ -189,7 +189,7 @@ Check the script without network:
 python -m unittest discover -s tests -v
 ```
 
-Current suite: **82 tests** (plus 26 subtests), all offline; `ruff check .` is green. For a GitHub Enterprise host, pass `--gh-host ghe.example.com` (or set `GH_HOST`); the same host is used for both the auth check and the search subprocess.
+Current suite: **88 tests** (plus 26 subtests), all offline; `ruff check .` is green. For a GitHub Enterprise host, pass `--gh-host ghe.example.com` (or set `GH_HOST`); the same host is used for both the auth check and the search subprocess.
 
 ## Three red lines
 
