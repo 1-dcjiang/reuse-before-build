@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.11 — 2026-11-15
+
+按 neko 同源问题做独立仓库适配，不改规则本体：
+
+- **关键词先按大小写不敏感去重**：`repo_scan.py` 在数量上限与检索前调用 `dedupe_keywords`，保留第一次出现的写法；`Kw` / `kw` / `KW` 只发一次检索，不再白占关键词名额。这里只做检索前去重，和 1.2.10 的结果表去重是两层。
+- **坏锚点契约不再抛栈**：`verify_localized.py` 的 `check_anchors` 对 `None` / 空串 / 非列表返回可读的 missing；`check_contract_baseline` 在加载时校验 `rule_anchors` / `must_have` 的锚点结构。
+- **保留本仓的子串语义**：本仓 `any` / `all` 原本都是子串匹配，不套 neko 的 ASCII 词边界；只修空值崩溃，不改锚点判定口径。
+- 测试计数 97（另有 26 subtests），版本号同步到 `1.2.11`（`SKILL.md`、四个脚本、README、CHANGELOG）。
+
 ## 1.2.10 — 2026-11-15
 
 按 neko 插件同源问题自查：

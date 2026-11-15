@@ -37,7 +37,7 @@ except Exception:
     pass
 
 
-__version__ = "1.2.10"
+__version__ = "1.2.11"
 
 PERMISSIVE = {"mit", "apache-2.0", "bsd-3-clause", "bsd-2-clause", "isc", "mpl-2.0", "0bsd", "unlicense"}
 
@@ -159,6 +159,19 @@ def validate_keyword(value: str) -> str:
                          "门槛请用 --stars / --updated-since")
     return text
 
+
+
+def dedupe_keywords(values: list[str]) -> list[str]:
+    """按大小写不敏感去重，保留第一次出现的写法；GitHub 检索本身不区分大小写。"""
+    out: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        key = value.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(value)
+    return out
 
 
 def redact_text(value: object, limit: int = 300) -> str:
@@ -451,6 +464,8 @@ def main() -> int:
     parser.add_argument("--json-out", default="", help="把原始结果写入该 JSON 文件（相对 --out-dir）")
     args = parser.parse_args()
 
+    # 先去掉同义重复，再判数量上限；否则 `Kw kw KW` 会白占名额、白跑三次检索。
+    args.keywords = dedupe_keywords(args.keywords)
     if len(args.keywords) > max(1, min(10, args.max_keywords)):
         print(f"[error] 关键词给了 {len(args.keywords)} 个，上限 {min(10, args.max_keywords)} 个。"
               "合并同义词、拆成多轮再跑。", file=sys.stderr)

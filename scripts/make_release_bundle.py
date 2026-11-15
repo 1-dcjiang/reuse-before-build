@@ -13,7 +13,7 @@
   - 三个产物已存在时拒绝覆盖，和 repo_scan 的输出策略一致。
 
 用法：
-    python scripts/make_release_bundle.py --version 1.2.10 --out-dir dist
+    python scripts/make_release_bundle.py --version 1.2.11 --out-dir dist
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-__version__ = "1.2.10"
+__version__ = "1.2.11"
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent

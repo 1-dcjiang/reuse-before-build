@@ -59,6 +59,24 @@ class TestContractBaseline(unittest.TestCase):
         self.assertIn("must_have_ids", missing)
         self.assertIn("declaration_keys", missing)
         self.assertIn("declaration_within_last:999!=8", missing)
+        contract = self._contract()
+        contract["must_have"][0]["any"] = [""]
+        self.assertIn(
+            "must_have:gate(any_empty_or_non_string)",
+            self.verify.check_contract_baseline(contract),
+        )
+        contract = self._contract()
+        contract["rule_anchors"][0]["any"] = [None]
+        self.assertIn(
+            "rule_anchors:rule_1(any_empty_or_non_string)",
+            self.verify.check_contract_baseline(contract),
+        )
+
+    def test_bad_anchor_types_do_not_crash_direct_checks(self):
+        self.assertEqual(
+            self.verify.check_anchors("anything", [{"id": "bad", "any": [None]}], "anchor"),
+            ["anchor:bad"],
+        )
 
     def test_contract_flag_still_cannot_point_outside_the_package(self):
         tmp = tempfile.mkdtemp(prefix="rbb_contract_")
@@ -102,6 +120,35 @@ class TestRepoScanDedupe(unittest.TestCase):
             repo_scan.auth_ok, repo_scan.scan, repo_scan.which_path_only = old_auth, old_scan, old_which
         self.assertEqual(code, 0, err.getvalue())
         self.assertNotIn("kw, kw", out.getvalue())
+
+    def test_case_insensitive_duplicate_keyword_is_not_scanned_twice(self):
+        row = {
+            "full_name": "o/r",
+            "stargazersCount": 9,
+            "pushedAt": "2026-11-01T00:00:00Z",
+            "license": {"key": "mit"},
+            "language": "Rust",
+            "openIssuesCount": 2,
+            "url": "https://github.com/o/r",
+            "matched_keyword": "Kw",
+        }
+        calls = []
+        old_argv = sys.argv
+        old_auth, old_scan, old_which = repo_scan.auth_ok, repo_scan.scan, repo_scan.which_path_only
+        try:
+            repo_scan.auth_ok = lambda *args, **kwargs: (True, "")
+            repo_scan.scan = lambda kw, *args, **kwargs: (calls.append(kw) or [dict(row)], True)
+            repo_scan.which_path_only = lambda name: "gh"
+            sys.argv = [SCAN, "Kw", "kw", "KW"]
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                code = repo_scan.main()
+        finally:
+            sys.argv = old_argv
+            repo_scan.auth_ok, repo_scan.scan, repo_scan.which_path_only = old_auth, old_scan, old_which
+        self.assertEqual(code, 0, err.getvalue())
+        self.assertEqual(calls, ["Kw"])
+        self.assertIn("Kw", out.getvalue())
 
 
 if __name__ == "__main__":

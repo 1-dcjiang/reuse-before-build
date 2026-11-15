@@ -20,7 +20,7 @@
 
 from __future__ import annotations
 
-__version__ = "1.2.10"
+__version__ = "1.2.11"
 
 import argparse
 import hashlib
@@ -152,20 +152,34 @@ def check_frontmatter(fm: dict | None) -> tuple[list[str], list[str]]:
     return missing, notes
 
 
+def _anchor_match(text_lower: str, needle: object) -> bool:
+    """锚点仍是子串语义；类型不对或空串一律算不命中，不让坏契约抛栈。"""
+    return isinstance(needle, str) and bool(needle.strip()) and needle.lower() in text_lower
+
+
 def check_anchors(scope: str, items: list[dict], where: str) -> list[str]:
+    if not isinstance(items, list):
+        return [f"{where}(not_list)"]
     missing = []
     low = scope.lower()
     for item in items:
+        if not isinstance(item, dict):
+            missing.append(f"{where}(not_object)")
+            continue
         ident = item.get("id", "?")
-        any_of = item.get("any", [])
-        all_of = item.get("all", [])
+        any_of = item.get("any") or []
+        all_of = item.get("all") or []
+        if not isinstance(any_of, list) or not isinstance(all_of, list):
+            missing.append(f"{where}:{ident}(anchor_spec_not_list)")
+            continue
         if not any_of and not all_of:
             missing.append(f"{where}:{ident}(no any/all spec)")
             continue
-        if any_of and not any(s.lower() in low for s in any_of):
+        if any_of and not any(_anchor_match(low, s) for s in any_of):
             missing.append(f"{where}:{ident}")
-        if all_of and not all(s.lower() in low for s in all_of):
-            missing.append(f"{where}:{ident}(needs all of: {', '.join(all_of)})")
+        absent = [s for s in all_of if not _anchor_match(low, s)]
+        if absent:
+            missing.append(f"{where}:{ident}(needs all of: {', '.join(str(s) for s in absent)})")
     return missing
 
 
@@ -180,9 +194,34 @@ def id_set(value: object) -> frozenset[str]:
     )
 
 
+def contract_anchor_errors(value: object, field: str) -> list[str]:
+    """契约锚点必须是对象数组，any/all 必须是非空字符串列表；坏结构在加载时就报错。"""
+    if not isinstance(value, list):
+        return [f"{field}(not_list)"]
+    errors: list[str] = []
+    for index, item in enumerate(value):
+        if not isinstance(item, dict):
+            errors.append(f"{field}[{index}](not_object)")
+            continue
+        ident = str(item.get("id") or f"#{index}")
+        for key in ("any", "all"):
+            if key not in item:
+                continue
+            needles = item[key]
+            if not isinstance(needles, list):
+                errors.append(f"{field}:{ident}({key}_not_list)")
+                continue
+            for needle in needles:
+                if not isinstance(needle, str) or not needle.strip():
+                    errors.append(f"{field}:{ident}({key}_empty_or_non_string)")
+    return errors
+
+
 def check_contract_baseline(contract: dict) -> list[str]:
     """契约只允许在基线之上收紧，不许把规则条数、锚点或声明字段悄悄改松。"""
     missing: list[str] = []
+    missing += contract_anchor_errors(contract.get("rule_anchors"), "rule_anchors")
+    missing += contract_anchor_errors(contract.get("must_have"), "must_have")
     try:
         rules_min = int(contract.get("rules_min", 0))
     except (TypeError, ValueError):
