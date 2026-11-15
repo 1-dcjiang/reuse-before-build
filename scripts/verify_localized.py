@@ -20,7 +20,7 @@
 
 from __future__ import annotations
 
-__version__ = "1.2.11"
+__version__ = "1.2.12"
 
 import argparse
 import hashlib
@@ -217,6 +217,40 @@ def contract_anchor_errors(value: object, field: str) -> list[str]:
     return errors
 
 
+def contract_root_errors(contract: object) -> list[str]:
+    """契约顶层与 block / declaration 的形状校验；坏结构在读取字段前就返回。"""
+    if not isinstance(contract, dict):
+        return ["contract(not_object)"]
+    errors: list[str] = []
+    if "block" in contract and not isinstance(contract["block"], dict):
+        errors.append("block(not_object)")
+    else:
+        block = contract.get("block") or {}
+        for key in ("begin", "end", "lang_marker_prefix", "canonical_file", "canonical_sha256"):
+            if key in block and not isinstance(block[key], str):
+                errors.append(f"block.{key}(not_string)")
+        if "canonical_files" in block:
+            files = block["canonical_files"]
+            if not isinstance(files, list) or any(not isinstance(item, str) for item in files):
+                errors.append("block.canonical_files(not_string_list)")
+    if "declaration" in contract and not isinstance(contract["declaration"], dict):
+        errors.append("declaration(not_object)")
+    else:
+        declaration = contract.get("declaration") or {}
+        if "keys" in declaration:
+            keys = declaration["keys"]
+            if not isinstance(keys, list) or any(not isinstance(item, str) for item in keys):
+                errors.append("declaration.keys(not_string_list)")
+        if "prefix" in declaration and not isinstance(declaration["prefix"], str):
+            errors.append("declaration.prefix(not_string)")
+        if "within_last" in declaration:
+            try:
+                int(declaration["within_last"])
+            except (TypeError, ValueError, OverflowError):
+                errors.append("declaration.within_last(not_int)")
+    return errors
+
+
 def check_contract_baseline(contract: dict) -> list[str]:
     """契约只允许在基线之上收紧，不许把规则条数、锚点或声明字段悄悄改松。"""
     missing: list[str] = []
@@ -224,7 +258,7 @@ def check_contract_baseline(contract: dict) -> list[str]:
     missing += contract_anchor_errors(contract.get("must_have"), "must_have")
     try:
         rules_min = int(contract.get("rules_min", 0))
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         rules_min = 0
     if rules_min != CANONICAL_RULES_MIN:
         missing.append(f"rules_min:{rules_min}!={CANONICAL_RULES_MIN}")
@@ -237,7 +271,7 @@ def check_contract_baseline(contract: dict) -> list[str]:
         missing.append("declaration_keys")
     try:
         within_last = int(declaration.get("within_last", 0))
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         within_last = 0
     if within_last != CANONICAL_DECLARATION_WITHIN_LAST:
         missing.append(f"declaration_within_last:{within_last}!={CANONICAL_DECLARATION_WITHIN_LAST}")
@@ -300,13 +334,19 @@ def main() -> int:
         print(f"FAIL  contract is not valid JSON: {exc}")
         return 1
 
+    root_errors = contract_root_errors(contract)
+    if root_errors:
+        print("FAIL  contract 顶层结构不合法：")
+        print("MISSING: " + ", ".join(root_errors))
+        return 1
+
     want_hash = str((contract.get("block") or {}).get("canonical_sha256") or "")
     if not args.print_hash and not re.fullmatch(r"[0-9a-fA-F]{64}", want_hash):
         print("FAIL  contract 缺少合法的 block.canonical_sha256（64 位十六进制）")
         return 1
     try:
         rules_floor = int(contract.get("rules_min", 0))
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         rules_floor = 0
     if not args.print_hash and (rules_floor < 1 or not contract.get("must_have")):
         print("FAIL  contract 的 rules_min 必须 ≥ 1，且 must_have 不能为空")

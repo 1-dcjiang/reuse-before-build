@@ -78,6 +78,52 @@ class TestContractBaseline(unittest.TestCase):
             ["anchor:bad"],
         )
 
+    def test_bad_contract_root_shapes_do_not_crash(self):
+        self.assertEqual(self.verify.contract_root_errors([]), ["contract(not_object)"])
+        contract = self._contract()
+        self.assertEqual(self.verify.contract_root_errors(contract), [])
+        contract["block"] = []
+        self.assertEqual(self.verify.contract_root_errors(contract), ["block(not_object)"])
+        contract = self._contract()
+        contract["block"]["begin"] = 1
+        self.assertEqual(self.verify.contract_root_errors(contract), ["block.begin(not_string)"])
+        contract = self._contract()
+        contract["block"]["lang_marker_prefix"] = 1
+        self.assertEqual(
+            self.verify.contract_root_errors(contract),
+            ["block.lang_marker_prefix(not_string)"],
+        )
+        contract = self._contract()
+        contract["block"]["canonical_files"] = ["SKILL.md", 1]
+        self.assertEqual(
+            self.verify.contract_root_errors(contract),
+            ["block.canonical_files(not_string_list)"],
+        )
+        contract = self._contract()
+        contract["declaration"] = ["x"]
+        self.assertEqual(
+            self.verify.contract_root_errors(contract),
+            ["declaration(not_object)"],
+        )
+        contract = self._contract()
+        contract["declaration"]["keys"] = 1
+        self.assertEqual(
+            self.verify.contract_root_errors(contract),
+            ["declaration.keys(not_string_list)"],
+        )
+        contract = self._contract()
+        contract["declaration"]["prefix"] = 1
+        self.assertEqual(
+            self.verify.contract_root_errors(contract),
+            ["declaration.prefix(not_string)"],
+        )
+        contract = self._contract()
+        contract["declaration"]["within_last"] = "abc"
+        self.assertEqual(
+            self.verify.contract_root_errors(contract),
+            ["declaration.within_last(not_int)"],
+        )
+
     def test_contract_flag_still_cannot_point_outside_the_package(self):
         tmp = tempfile.mkdtemp(prefix="rbb_contract_")
         self.addCleanup(shutil.rmtree, tmp, True)

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.12 — 2026-11-15
+
+按 neko `v0.3.20` 同源的契约形状问题做独立仓适配；本仓没有 `critical_sections`，不照搬那段：
+
+- **契约根形状先校验**：`verify_localized.py` 新增 `contract_root_errors`，顶层非对象、`block` 非对象、`block.begin` / `end` / `lang_marker_prefix` / `canonical_file` / `canonical_sha256` 非字符串、`canonical_files` 非字符串列表、`declaration` 非对象、`declaration.keys` 非字符串列表、`declaration.prefix` 非字符串、`within_last` 非整数时，先报 `MISSING: ...` 并 `rc=1`，不再抛栈。
+- **`--print-hash` 同样受根校验保护**：坏 `block` 不会在取 `block.canonical_sha256` 时崩溃。
+- **溢出兜底**：`rules_min` 与 `declaration.within_last` 的 `int()` 增加 `OverflowError` 捕获。
+- 保留本仓的子串锚点语义与 `critical_sections` 缺失的现状，不改规则判定口径。
+- 测试 98（1 条发布快照测试在打 tag 前跳过），Ruff 全绿；版本号同步到 `1.2.12`（`SKILL.md`、四个脚本、README、CHANGELOG）。
+
 ## 1.2.11 — 2026-11-15
 
 按 neko 同源问题做独立仓库适配，不改规则本体：

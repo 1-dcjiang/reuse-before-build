@@ -37,7 +37,7 @@ except Exception:
     pass
 
 
-__version__ = "1.2.11"
+__version__ = "1.2.12"
 
 PERMISSIVE = {"mit", "apache-2.0", "bsd-3-clause", "bsd-2-clause", "isc", "mpl-2.0", "0bsd", "unlicense"}
 
