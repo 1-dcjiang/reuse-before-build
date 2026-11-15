@@ -1,6 +1,6 @@
 ---
 name: reuse-before-build
-version: 1.2.8
+version: 1.2.9
 license: MIT
 description: 用户说“帮我写一个…工具/脚本/插件/服务”“做一个和 X 一样的程序”“有没有现成的开源项目”“从零实现一个”，或说 upstream this fix、提 PR 时使用：先检索 GitHub 与包生态里已有同用途实现，按活跃度、许可、贡献友好度评估，优先加入该仓库当公共贡献者，而不是新建更差的重复品。只有要私有/闭源代码、许可禁止再分发时才跳过。Before writing any new program, script, library, plugin or service, search GitHub for an existing implementation and contribute upstream instead of shipping a duplicate, e.g. “build me a tool”, “write a script that…”, “is there an existing project for this”, “implement X from scratch”, “open a PR”.
 ---
@@ -17,7 +17,7 @@ Rules, not a tool. Works in any host that can read files (Claude Skills, AGENTS.
 <!-- RBB:INVARIANTS:BEGIN -->
 1. **Assume it already exists until searching proves otherwise.** Never draft a prototype first and look for references later. Order is always search → evaluate → decide → build.
 2. **The default outcome is joining an existing public repository, not creating a new one.** What the user actually wants is a working, maintained, upgradeable thing — not an orphan one-off. An upstream repo brings tests, issue tracking, release channels and users for free.
-3. **Prove non-reusability before building new.** New code requires a stated reason (license, direction conflict, abandoned upstream with no viable fork, genuinely different requirement) written in the deliverable.
+3. **Prove non-reusability before building new.** New code requires a stated reason (license, direction explicitly opposite, abandoned upstream with no viable fork, genuinely different requirement) written in the deliverable.
 4. **Contribution must be genuinely useful.** No typo, formatting or untested-duplicate PRs. Those get closed and tag the account as a spammer.
 5. **Code gate: candidates and a first concrete action come before scaffolding.** Do not output a full new-project scaffold before you have listed 3–6 candidates and the first executable contribution action (draft issue text or PR plan).
    If a matching repo exists and you still choose to build new, the first line of the reply must be `不可复用原因 / Not reusable because: <license | direction | maintenance | requirement mismatch>`.
@@ -67,11 +67,11 @@ Score with [references/repo-triage.md](references/repo-triage.md): activity, mai
 | Verdict | Condition | Next |
 |---|---|---|
 | **Join** (preferred) | Total ≥ 8, license score ≥ 1, requirement fits as an incremental feature or fix, **modifiability green only** | Contribution protocol |
-| **Extend** | Total 6–7, a plugin/extension/theme mechanism exists, **or modifiability is yellow** | Ship as an official extension behind a stable seam; still joining the ecosystem |
-| **Fork** | Total ≤ 5 but direction and license allow, maintainer gone, direction conflict, **or modifiability is red** while license allows | Fork, keep syncing upstream, PR the improvement back |
-| **Build** | No equivalent, license forbids it, requirement is fundamentally different, or every candidate is red | Build new — reason first |
+| **Extend** | Total 6–7 **with** a plugin/extension/theme mechanism, **or modifiability is yellow** | Ship as an official extension behind a stable seam; still joining the ecosystem |
+| **Fork** | Total ≤ 5 but direction and license allow; total 6–7 **without** a plugin mechanism; maintainer gone; **or modifiability is red** while license allows | Fork, keep syncing upstream, PR the improvement back |
+| **Build** | No equivalent, license forbids it, requirement is fundamentally different **or direction is explicitly opposite**, or every candidate is red | Build new — reason first |
 
-There is no fifth verdict and no score band without a row: a 5-or-below repo that is still active is **Fork**, not Join. Yellow is never Join, even at 12/12.
+There is no fifth verdict and no score band without a row: a 5-or-below repo that is still active is **Fork**, not Join; a 6–7 repo without a plugin mechanism is also **Fork**, not Extend; yellow is never Join, even at 12/12.
 
 For every rejected candidate, write one line on why you dropped it. Users ask.
 

@@ -1,6 +1,6 @@
 # reuse-before-build
 
-**Version 1.2.8** · MIT · [CHANGELOG](CHANGELOG.md)
+**Version 1.2.9** · MIT · [CHANGELOG](CHANGELOG.md)
 
 > An AI agent skill: **before writing a new program, search for the existing open-source implementation and join that repo as a public contributor — instead of shipping a worse duplicate.**
 
@@ -97,6 +97,8 @@ Rebuild the same bundle from a checkout:
 python scripts/make_release_bundle.py --version <version> --out-dir dist
 ```
 
+The builder refuses to run unless `--version` matches `SKILL.md`, `v<version>` exists and points at `HEAD`, and the worktree is clean; it archives the **tag**, not `HEAD`, and will not overwrite an existing zip / `integration-seam.md` / `SHA256SUMS`.
+
 ## Install
 
 Four placements — pick by host. Exact platform list, rule-file names and character budgets are in [`references/host-adapters.md`](references/host-adapters.md).
@@ -135,7 +137,7 @@ python scripts/verify_localized.py <localized-copy>
 `PASS` means the block is intact — either verbatim (hash matches, so any edit is caught) or, for a
 translated copy carrying a `RBB:INVARIANTS:LANG:` marker, that the block still holds exactly 1..5
 numbered rules (only column-0 numbering counts, so indented sub-items don't confuse it), each rule's
-anchor survives, all six skill-level anchors survive, and the copy ends with the
+anchor survives, all nine skill-level anchors survive, and the copy ends with the
 `localized: host=… | kept=… | changed=… | unsupported=…` line (tolerating up to 8 trailing non-empty
 lines for a copyright footer). The block is located outside code fences, so a fenced demo of the
 markers earlier in the file cannot hijack it. Exit `1` lists exactly what went missing.
@@ -173,10 +175,13 @@ Exit codes are deliberate:
 | Code | Meaning |
 |---|---|
 | `0` | searches ran; `0 hit` is reported as *no match found*, never as *nothing exists* |
-| `2` | gh unusable — missing, not signed in, or host unreachable |
+| `2` | usage or argument error — illegal keyword, output path outside `--out-dir`, bad `--gh-host`/`--timeout` |
 | `3` | gh works but every search failed (rate limit, transient error) |
+| `4` | gh unusable — missing, not signed in, or host unreachable |
+| `5` | writing `--md-out` / `--json-out` failed |
+| `6` | only some keywords succeeded; the table may be incomplete |
 
-On `2` or `3` the script writes **no** `--md-out` / `--json-out` file, so a downstream reader cannot mistake an empty table for "already checked". `--md-out` / `--json-out` are treated as relative to `--out-dir` (default: the current directory); absolute paths and `..` that escape it are rejected, and an existing file is never overwritten.
+On `3` or `4` the script writes **no** `--md-out` / `--json-out` file, so a downstream reader cannot mistake an empty table for "already checked". On `5`, one of the two files may already have been written before the other failed; on `6`, the partial result is written with a warning. `--md-out` / `--json-out` are treated as relative to `--out-dir` (default: the current directory); absolute paths and `..` that escape it are rejected, and an existing file is never overwritten.
 
 Check the script without network:
 
@@ -184,7 +189,7 @@ Check the script without network:
 python -m unittest discover -s tests -v
 ```
 
-Current suite: **63 tests**, all offline; `ruff check .` is green. For a GitHub Enterprise host, pass `--gh-host ghe.example.com` (or set `GH_HOST`); the same host is used for both the auth check and the search subprocess.
+Current suite: **82 tests** (plus 26 subtests), all offline; `ruff check .` is green. For a GitHub Enterprise host, pass `--gh-host ghe.example.com` (or set `GH_HOST`); the same host is used for both the auth check and the search subprocess.
 
 ## Three red lines
 
@@ -200,7 +205,7 @@ MIT, see [LICENSE](LICENSE).
 
 # 先复用，再新建（中文）
 
-**版本 1.2.8** · MIT · [变更记录](CHANGELOG.md)
+**版本 1.2.9** · MIT · [变更记录](CHANGELOG.md)
 
 > 一个面向 AI 编程助手的 Skill：**在写新程序之前，先去找已经存在的公开实现，并优先加入那个仓库、成为公共贡献者，而不是从零再造一个。**
 

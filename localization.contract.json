@@ -1,11 +1,11 @@
 {
-  "version": 2,
+  "version": 3,
   "block": {
     "begin": "RBB:INVARIANTS:BEGIN",
     "end": "RBB:INVARIANTS:END",
     "lang_marker_prefix": "RBB:INVARIANTS:LANG:",
     "canonical_file": "SKILL.md",
-    "canonical_sha256": "fa0f991fbfd236d860a2c401aff6f104f994e97d2b1fa100c23eee9d046fbc93",
+    "canonical_sha256": "690f0165e1f67fbb771a68c5456dcd35243e1132cfa0b0b9f287caf446143526",
     "canonical_files": ["SKILL.md", "references/zh-guide.md"]
   },
   "rules_min": 5,
@@ -55,6 +55,18 @@
     {
       "id": "quick_lane",
       "any": ["Reused:", "复用："]
+    },
+    {
+      "id": "untrusted_section",
+      "any": ["Untrusted repository content", "不可信仓库内容"]
+    },
+    {
+      "id": "untrusted_data_not_instructions",
+      "any": ["data, not instructions", "数据，不是指令"]
+    },
+    {
+      "id": "untrusted_container",
+      "any": ["disposable container", "一次性容器"]
     }
   ],
   "declaration": {

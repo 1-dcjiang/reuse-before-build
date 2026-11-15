@@ -156,7 +156,7 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(run_mock.call_args.kwargs["env"]["GH_HOST"], "ghe.example.com")
 
     def test_version_is_exposed(self):
-        self.assertEqual(repo_scan.__version__, "1.2.8")
+        self.assertEqual(repo_scan.__version__, "1.2.9")
 
     def test_verify_localized_defines_version_once(self):
         path = os.path.join(ROOT, "scripts", "verify_localized.py")
@@ -164,7 +164,7 @@ class TestHelpers(unittest.TestCase):
             source = fh.read()
         matches = re.findall(r"^__version__\s*=", source, re.MULTILINE)
         self.assertEqual(len(matches), 1)
-        self.assertIn('__version__ = "1.2.8"', source)
+        self.assertIn('__version__ = "1.2.9"', source)
 
     def test_cli_argument_validators(self):
         self.assertEqual(repo_scan._stars_arg("0"), 0)
@@ -181,7 +181,9 @@ class TestHelpers(unittest.TestCase):
 
     def test_keyword_validation_rejects_qualifiers_and_control_chars(self):
         self.assertEqual(repo_scan.validate_keyword("  obsidian sync plugin  "), "obsidian sync plugin")
-        for bad in ("", "x\x00y", "x\x01y", "a" * 201, "x stars:>5", "user:evil sync", "org:evil"):
+        for bad in ("", "x\x00y", "x\x01y", "a" * 201, "x stars:>5", "user:evil sync", "org:evil",
+                    "x forks:>3", "x in:name", "x has:wiki", "x good-first-issues:>2",
+                    "sync(stars:>5)"):
             with self.subTest(bad=bad):
                 with self.assertRaises(ValueError):
                     repo_scan.validate_keyword(bad)
@@ -202,19 +204,43 @@ class TestHelpers(unittest.TestCase):
         argv = repo_scan.search_args("sync", 50, "2025-01-01", 6)
         self.assertIn("sync stars:>=50 pushed:>=2025-01-01", argv)
 
-    def test_which_path_only_never_searches_the_current_directory(self):
+    def test_which_path_only_ignores_cwd_and_relative_entries(self):
         tmp = tempfile.mkdtemp(prefix="rbb_cwd_")
+        safe_dir = tempfile.mkdtemp(prefix="rbb_safe_path_")
         self.addCleanup(shutil.rmtree, tmp, True)
-        fake = os.path.join(tmp, "gh.exe" if os.name == "nt" else "gh")
-        with open(fake, "w", encoding="utf-8") as fh:
-            fh.write("")
+        self.addCleanup(shutil.rmtree, safe_dir, True)
+        name = "gh.exe" if os.name == "nt" else "gh"
+        fake_cwd = os.path.join(tmp, name)
+        fake_safe = os.path.join(safe_dir, name)
+        for path in (fake_cwd, fake_safe):
+            with open(path, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write("")
+            os.chmod(path, 0o755)
         old = os.getcwd()
         os.chdir(tmp)
         try:
-            with unittest.mock.patch.dict(os.environ, {"PATH": os.pathsep.join(["", tmp])}):
-                self.assertEqual(repo_scan.which_path_only("gh"), "")
+            # cwd 与相对 bin 都必须被跳过；safe_dir 才是唯一合法来源。
+            os.mkdir(os.path.join(tmp, "bin"))
+            shutil.copy2(fake_cwd, os.path.join(tmp, "bin", name))
+            with unittest.mock.patch.dict(
+                os.environ, {"PATH": os.pathsep.join(["", tmp, "bin", safe_dir])}
+            ):
+                got = repo_scan.which_path_only("gh")
         finally:
             os.chdir(old)
+        self.assertEqual(os.path.realpath(got), os.path.realpath(fake_safe))
+
+    def test_which_path_only_empty_path_returns_empty(self):
+        with unittest.mock.patch.dict(os.environ, {"PATH": ""}):
+            self.assertEqual(repo_scan.which_path_only("gh"), "")
+
+    def test_gh_subprocess_disables_cwd_search(self):
+        exc = subprocess.CompletedProcess(["gh"], 0, "[]", "")
+        with unittest.mock.patch.object(repo_scan.subprocess, "run", return_value=exc) as run_mock:
+            repo_scan.gh_json(["search"], host="ghe.example.com")
+        env = run_mock.call_args.kwargs["env"]
+        self.assertEqual(env["NoDefaultCurrentDirectoryInExePath"], "1")
+        self.assertEqual(env["GH_HOST"], "ghe.example.com")
 
     def test_output_path_rejects_git_directory(self):
         tmp = tempfile.mkdtemp(prefix="rbb_git_")
@@ -613,7 +639,7 @@ class TestVerifier(unittest.TestCase):
     DECL = ("\nlocalized: host=test | kept=all | changed=packaging | unsupported=none\n")
 
     def test_deleting_a_rule_fails_in_translated_mode(self):
-        """翻译模式不能靠"只比 6 个锚点"混过删条这一关。"""
+        """翻译模式不能靠"只比 9 个锚点"混过删条这一关。"""
         def mutate(text):
             return "\n".join(line for line in text.splitlines()
                              if "默认目标是加入已有公开仓库" not in line)

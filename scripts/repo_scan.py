@@ -26,7 +26,6 @@ import datetime as dt
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
 import time
@@ -38,7 +37,7 @@ except Exception:
     pass
 
 
-__version__ = "1.2.8"
+__version__ = "1.2.9"
 
 PERMISSIVE = {"mit", "apache-2.0", "bsd-3-clause", "bsd-2-clause", "isc", "mpl-2.0", "0bsd", "unlicense"}
 
@@ -62,28 +61,88 @@ _URL_CRED_RX = re.compile(r"(?i)(https?://)[^/\s:@]+(?::[^/\s@]*)?@")
 _HEADER_RX = re.compile(r"(?i)((?:cookie|authorization)\s*[:=]\s*)[^\r\n]+")
 # 关键词里出现检索限定符会覆盖脚本自己的 stars/pushed/archived 过滤条件。
 _QUALIFIER_RX = re.compile(
-    r"(?i)(?:^|\s)(?:stars|archived|pushed|created|updated|is|topic|language|license|"
-    r"owner|repo|user|org|size|fork|mirror|template):"
+    r"(?i)(?:^|[\s(])(?:stars|forks|followers|in|has|good-first-issues?|archived|pushed|"
+    r"created|updated|is|topic|language|license|owner|repo|user|org|size|fork|mirror|template):"
 )
 _HOST_RX = re.compile(r"^(?=.{1,253}$)[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?(?::\d{1,5})?$")
+
+
+def _real(path: str) -> str:
+    return os.path.realpath(os.path.abspath(path))
+
+
+def _inside(path: str, root: str) -> bool:
+    """Windows 跨盘符时 commonpath 会抛 ValueError，按“不在同一棵树”处理。"""
+    try:
+        return os.path.commonpath([_real(path), _real(root)]) == _real(root)
+    except ValueError:
+        return False
+
+
+def _path_entries() -> list[str]:
+    """只留下 PATH 里的绝对、且在 cwd 之外的目录。
+
+    Windows 的 CreateProcess 即使 PATH 里没有 `.`，也会先找当前目录；相对条目
+    （例如 `bin`）最终也可能落到 cwd。这里先手工把这两类都剔除，再逐个目录找。
+    """
+    cwd = _real(os.curdir)
+    entries: list[str] = []
+    for part in os.environ.get("PATH", "").split(os.pathsep):
+        if not part or not os.path.isabs(part):
+            continue
+        entry = _real(part)
+        if _inside(entry, cwd):
+            continue
+        if entry not in entries:
+            entries.append(entry)
+    return entries
+
+
+def _candidate_names(name: str) -> list[str]:
+    """Windows 按 PATHEXT 逐个后缀试；POSIX 只用原名。"""
+    if os.name != "nt":
+        return [name]
+    ext = os.path.splitext(name)[1]
+    if ext:
+        return [name]
+    exts = [e.strip().lower() for e in os.environ.get("PATHEXT", "").split(";") if e.strip()]
+    # 没有 PATHEXT 时至少保留 .exe，避免把无后缀文件当成可执行文件。
+    return [name + (e if e.startswith(".") else "." + e) for e in (exts or [".exe"])] + [name]
+
+
+def _executable(path: str) -> bool:
+    return os.path.isfile(path) and os.access(path, os.X_OK)
 
 
 def which_path_only(name: str) -> str:
     """只从 PATH 解析可执行文件，绝不接受当前目录里的同名文件。
 
-    `shutil.which()` 在 Windows 上会把当前目录补进搜索路径；在刚 clone 的第三方
-    仓库里运行本脚本时，仓库自带的 `gh.exe`/`gh.bat` 就会被执行。这里显式过滤
-    掉空条目与当前目录，并把过滤后的 PATH 传给 `shutil.which()`。
+    `shutil.which(path=...)` 在 Windows 上不足以挡住当前目录注入；这里改成手工遍历
+    绝对 PATH 条目，逐项过滤相对目录与 cwd 内目录，最后再用 realpath 拒绝指回 cwd 的
+    symlink/junction。找到就返回绝对路径，调用方直接把它交给 subprocess。
     """
-    raw = os.environ.get("PATH", "")
-    cwd = os.path.normcase(os.path.abspath(os.curdir))
-    entries = [
-        part for part in raw.split(os.pathsep)
-        if part and os.path.normcase(os.path.abspath(part)) != cwd
-    ]
-    if not entries:
+    if not name or os.path.isabs(name) or os.sep in name or (os.altsep and os.altsep in name):
         return ""
-    return shutil.which(name, path=os.pathsep.join(entries)) or ""
+    cwd = _real(os.curdir)
+    names = _candidate_names(name)
+    for entry in _path_entries():
+        for candidate_name in names:
+            candidate = os.path.join(entry, candidate_name)
+            if not _executable(candidate):
+                continue
+            if _inside(candidate, cwd):
+                continue
+            return os.path.normpath(os.path.abspath(candidate))
+    return ""
+
+
+def _subprocess_env(host: str = "") -> dict[str, str]:
+    """给 gh 子进程的固定环境：禁用当前目录搜索，并可选指定 GH_HOST。"""
+    env = dict(os.environ)
+    env["NoDefaultCurrentDirectoryInExePath"] = "1"
+    if host:
+        env["GH_HOST"] = host
+    return env
 
 
 def validate_keyword(value: str) -> str:
@@ -151,10 +210,7 @@ def parse_search_output(out: str) -> list[dict]:
 
 def gh_json(args: list[str], timeout: float = 60, gh_binary: str = "gh",
             host: str = "") -> list[dict]:
-    env = None
-    if host:
-        env = dict(os.environ)
-        env["GH_HOST"] = host
+    env = _subprocess_env(host)
     try:
         proc = subprocess.run(
             [gh_binary, *args],
@@ -259,6 +315,7 @@ def auth_ok(host: str = "", gh_binary: str = "gh", timeout: float = 30) -> tuple
             errors="replace",
             timeout=max(2.0, float(timeout)),
             shell=False,
+            env=_subprocess_env(),
         )
     except FileNotFoundError:
         return False, "gh 可执行文件不在了（PATH 变了？）"
