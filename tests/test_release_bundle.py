@@ -45,8 +45,9 @@ class TestReleaseBundlePolicy(unittest.TestCase):
         tmp = tempfile.mkdtemp(prefix="rbb_rel_")
         self.addCleanup(shutil.rmtree, tmp, True)
         Path(tmp, "SHA256SUMS").write_text("sentinel\n", encoding="utf-8")
-        with self.assertRaisesRegex(ValueError, "拒绝覆盖"):
-            bundle.build("1.2.9", Path(tmp))
+        with mock.patch.object(bundle, "ensure_release_policy", return_value="v1.2.9"):
+            with self.assertRaisesRegex(ValueError, "拒绝覆盖"):
+                bundle.build("1.2.9", Path(tmp))
         self.assertEqual(Path(tmp, "SHA256SUMS").read_text(encoding="utf-8"), "sentinel\n")
 
 
@@ -97,7 +98,8 @@ class TestReleaseBundleSnapshot(unittest.TestCase):
         tmp = Path(tempfile.mkdtemp(prefix="rbb_rel_"))
         self.addCleanup(shutil.rmtree, tmp, True)
         (tmp / "integration-seam.md").write_text("sentinel\n", encoding="utf-8")
-        rc = bundle.main(["--version", bundle.read_version(), "--out-dir", str(tmp)])
+        with mock.patch.object(bundle, "ensure_release_policy", return_value="v1.2.9"):
+            rc = bundle.main(["--version", bundle.read_version(), "--out-dir", str(tmp)])
         self.assertEqual(rc, 2)
         self.assertEqual((tmp / "integration-seam.md").read_text(encoding="utf-8"), "sentinel\n")
 
