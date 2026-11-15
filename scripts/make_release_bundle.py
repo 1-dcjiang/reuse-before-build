@@ -9,7 +9,7 @@
 安全约束：
   - `--version` 必须与 SKILL.md 的 `version` 一致；
   - `v<version>` tag 必须存在，且必须指向当前 HEAD；
-  - 工作区必须干净（`git status --porcelain` 为空）；
+  - 工作区必须干净（`git status --porcelain --untracked-files=no` 为空；未跟踪的本地缓存不影响 tag 快照）；
   - 三个产物已存在时拒绝覆盖，和 repo_scan 的输出策略一致。
 
 用法：
@@ -75,7 +75,7 @@ def ensure_release_policy(version: str) -> str:
             f"--version {version!r} 与 SKILL.md 的 {skill_version!r} 不一致；"
             "先改版本再打包，避免包名与规则版本分叉"
         )
-    if _git("status", "--porcelain").stdout.strip():
+    if _git("status", "--porcelain", "--untracked-files=no").stdout.strip():
         raise ValueError("工作区不干净：commit 或 stash 后再打发布包")
     tag = f"v{version}"
     tag_commit = _git_required("rev-parse", "--verify", f"refs/tags/{tag}^{{commit}}")
