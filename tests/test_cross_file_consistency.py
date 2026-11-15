@@ -21,6 +21,11 @@ class TestCrossFileVerdicts(unittest.TestCase):
         self.assertNotIn("可改性为绿或黄", self.zh)
         self.assertNotIn("green or yellow", self.en)
 
+    def test_join_requires_incremental_fit(self):
+        self.assertIn("requirement fits as an incremental feature or fix", self.en)
+        self.assertIn("需求能作为增量功能/修复并入", self.zh)
+        self.assertIn("需求能作为增量功能/修复并入", self.triage)
+
     def test_extend_requires_total_6_7_and_plugin_or_yellow(self):
         self.assertIn("Total 6–7 **with** a plugin/extension/theme mechanism", self.en)
         self.assertIn("总分 6–7 且仓库有插件/扩展/主题机制", self.zh)
@@ -36,6 +41,18 @@ class TestCrossFileVerdicts(unittest.TestCase):
         self.assertIn("方向相反", self.zh)
         self.assertIn("方向相反", self.triage)
         self.assertNotIn("方向冲突", self.zh)
+
+    def test_build_requires_all_candidates_red(self):
+        self.assertIn("every candidate is red", self.en)
+        self.assertIn("候选全为红", self.zh)
+        self.assertIn("所有候选都可改性为“红”", self.triage)
+        build_row = next(line for line in self.triage.splitlines() if line.startswith("- ") and "**Build**" in line)
+        self.assertNotIn("可改性为“红” →", build_row)
+
+    def test_fork_owns_single_red_while_license_allows(self):
+        self.assertIn("modifiability is red** while license allows", self.en)
+        self.assertIn("可改性为红**但许可允许", self.zh)
+        self.assertIn("可改性为“红”但许可允许", self.triage)
 
 
 class TestUntrustedAnchors(unittest.TestCase):
