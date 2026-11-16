@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.13 — 2026-11-16
+
+补 1.2.12 留下的校验盲区：关键章节正文此前只查关键词，正文被静默改写也照样 PASS。
+
+- **关键章节正文钉进代码基线**：`verify_localized.py` 新增 `CANONICAL_SECTION_SHA256` / `CANONICAL_SECTION_FLOORS` / `CANONICAL_SECTION_ANCHORS`，以及 `_fence_mask` / `section_hash` / `extract_section` / `check_critical_sections`；对正典 `SKILL.md` 的 `Step 2 — Evaluate`、`Step 3 — Contribute`、`Hard constraints`、`Untrusted repository content` 四段逐段比 sha256。`section_hash` 逐行 `rstrip` 后再取哈希，CRLF 检出不会误报。
+- **契约不能同源改写**：`localization.contract.json` `version` 3 → 4，新增 `critical_sections`（四段，各带 headings / min_chars / sha256 / anchors）；`check_contract_baseline` 校验契约里的章节 id 集合、哈希、长度下限与锚点集合是否与代码常量逐项一致——正文与契约里的 sha 一起改，照样报 `critical_sections_hash` 并 `rc=1`。
+- **只对正典生效**：第 5 道闸只作用于 `block.canonical_file`（`SKILL.md`）；`references/zh-guide.md` 等译本仍按原有锚点口径校验，不受影响。
+- **回归测试**：`tests/test_reuse_regressions.py` 新增 `TestCriticalSections` 6 条——契约四段齐备且与代码基线一致、正典四段哈希命中、正文加一句即 `section_hash:step2`、正文+契约同改即 `critical_sections_hash:step2`、删段与降低长度下限分别报错、CRLF 安全。
+- 测试 103（1 条发布快照测试在打 tag 前跳过，另有 26 subtests），Ruff 全绿；版本号同步到 `1.2.13`（`SKILL.md`、四个脚本、README、CHANGELOG）。
+
 ## 1.2.12 — 2026-11-15
 
 按 neko `v0.3.20` 同源的契约形状问题做独立仓适配；本仓没有 `critical_sections`，不照搬那段：

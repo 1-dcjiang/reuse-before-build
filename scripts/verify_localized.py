@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """校验一份本地化副本是否保住了不可变项。
 
-四道闸：
+五道闸：
   1. 不变块（<!-- RBB:INVARIANTS --> 之间）——逐字版比哈希，翻译版比规则条数与逐条锚点；
   2. 规则完整性——块内编号必须正好 1..N（N≥rules_min），删条、改号都会露馅；
   3. 语义锚点（localization.contract.json 的 must_have）——中英任一写法均算命中；
-  4. 声明行——`localized: host=... | kept=... | changed=... | unsupported=...`。
+  4. 声明行——`localized: host=... | kept=... | changed=... | unsupported=...`；
+  5. 关键章节正文（step2 评估 / step3 贡献 / 硬约束 / 不可信仓库四段）——正典比正文哈希，
+     本地化副本比最小长度与多条锚点；章节哈希同时钉在代码里，改契约放不进来。
 
 `--canonical` 不是开关，是自证：只对契约里列出的包内参考件生效，对任何其它文件一律拒绝（rc 2），
 免得"本地化者"给自己开个后门跳过声明检查。
@@ -20,7 +22,7 @@
 
 from __future__ import annotations
 
-__version__ = "1.2.12"
+__version__ = "1.2.13"
 
 import argparse
 import hashlib
@@ -48,6 +50,20 @@ CANONICAL_MUST_HAVE_IDS = frozenset({
 })
 CANONICAL_DECLARATION_KEYS = ("host", "kept", "changed", "unsupported")
 CANONICAL_DECLARATION_WITHIN_LAST = 8
+# 关键章节的正文基线也钉在代码里：只改同目录契约里的 critical_sections 放不进来(1.2.13)。
+CANONICAL_SECTION_SHA256 = {
+    "step2": "8f49a44e1e500142529286b09792fd8eeb4bd7b3a245b7053175a44b7e1f9ecd",
+    "step3": "6bba58cd17a327df6284844010f17ba8a72e59e588c8bf4e31e7499caace8d76",
+    "hard_constraints": "c5699bd8be27016e9fcab95b80f0702dca3b44ed49df00501895855c25e61761",
+    "untrusted": "c878e673c7ca0394c4d211114dfdb589df4238735d4806b5a08d28dacabc984f",
+}
+CANONICAL_SECTION_FLOORS = {"step2": 500, "step3": 500, "hard_constraints": 350, "untrusted": 180}
+CANONICAL_SECTION_ANCHORS = {
+    "step2": frozenset({"scoring", "modifiability", "verdict_table", "no_fifth"}),
+    "step3": frozenset({"contributing", "branch", "adapter", "ai"}),
+    "hard_constraints": frozenset({"never_invent", "public_write", "never_join"}),
+    "untrusted": frozenset({"data", "no_exec", "verdict"}),
+}
 
 
 def read_text(path: str) -> str:
@@ -89,6 +105,113 @@ def extract_block(text: str, begin: str, end: str) -> str | None:
 def block_hash(inner: str) -> str:
     norm = "\n".join(line.rstrip() for line in inner.strip().splitlines())
     return hashlib.sha256(norm.encode("utf-8")).hexdigest()
+
+
+def _fence_mask(lines: list[str]) -> list[bool]:
+    """标记反引号与波浪号围栏；closing fence 必须同字符且不少于开栏长度。"""
+    masked: list[bool] = []
+    fence_char = ""
+    fence_len = 0
+    for line in lines:
+        match = re.match(r"^\s*(`{3,}|~{3,})", line)
+        if match:
+            marker = match.group(1)
+            if not fence_char:
+                fence_char, fence_len = marker[0], len(marker)
+            elif marker[0] == fence_char and len(marker) >= fence_len:
+                fence_char, fence_len = "", 0
+            masked.append(True)
+            continue
+        masked.append(bool(fence_char))
+    return masked
+
+
+def section_hash(body: str) -> str:
+    """章节正文哈希：逐行去行尾空白、去首尾空行后取 sha256（CRLF 检出不影响判定）。"""
+    norm = "\n".join(line.rstrip() for line in body.strip().splitlines())
+    return hashlib.sha256(norm.encode("utf-8")).hexdigest()
+
+
+def extract_section(text: str, headings: list[str]) -> str | None:
+    """按二级标题取章节正文；代码围栏里的示例标题不算，多个候选取最长的那段。"""
+    if not isinstance(headings, list):
+        return None
+    wanted = {
+        heading.strip().casefold()
+        for heading in headings
+        if isinstance(heading, str) and heading.strip()
+    }
+    if not wanted:
+        return None
+    lines = text.splitlines()
+    fenced = _fence_mask(lines)
+    starts: list[int] = []
+    for index, line in enumerate(lines):
+        if fenced[index]:
+            continue
+        match = re.match(r"^##\s+(.+?)\s*$", line)
+        if match and match.group(1).strip().casefold() in wanted:
+            starts.append(index)
+    candidates: list[str] = []
+    for start in starts:
+        end = next(
+            (index for index in range(start + 1, len(lines))
+             if not fenced[index] and re.match(r"^##\s+\S", lines[index])),
+            len(lines),
+        )
+        candidates.append("\n".join(lines[start + 1:end]).strip())
+    return max(candidates, key=len) if candidates else None
+
+
+def check_critical_sections(text: str, items: list[dict], is_canonical: bool) -> list[str]:
+    """关键章节不能只剩一个子串：正典比正文哈希，本地化副本比最小长度 + 多条锚点。"""
+    missing: list[str] = []
+    if not isinstance(items, list):
+        return ["critical_sections(not_list)"]
+    for item in items:
+        if not isinstance(item, dict):
+            missing.append("critical_sections(not_object)")
+            continue
+        ident = item.get("id", "?")
+        headings = item.get("headings", [])
+        if not isinstance(headings, list) or not any(
+            isinstance(heading, str) and heading.strip() for heading in headings
+        ):
+            missing.append(f"section:{ident}(bad_headings)")
+            continue
+        body = extract_section(text, headings)
+        if body is None:
+            missing.append(f"section:{ident}")
+            continue
+        if is_canonical and item.get("sha256"):
+            if section_hash(body) != str(item["sha256"]).lower():
+                missing.append(f"section_hash:{ident}")
+            continue
+        anchors = item.get("anchors", [])
+        anchor_errors = contract_anchor_errors(anchors, f"section:{ident}:anchors")
+        if anchor_errors:
+            missing.extend(anchor_errors)
+            continue
+        try:
+            floor = int(item.get("min_chars", 0) or 0)
+        except (TypeError, ValueError, OverflowError):
+            missing.append(f"section_floor:{ident}(invalid)")
+            continue
+        if floor and len(body.strip()) < floor:
+            missing.append(f"section_short:{ident}({len(body.strip())}<{floor})")
+        low = body.lower()
+        for anchor in anchors:
+            aid = anchor.get("id", "?")
+            any_of = anchor.get("any", [])
+            all_of = anchor.get("all", [])
+            if any_of and not any(_anchor_match(low, needle) for needle in any_of):
+                missing.append(f"section_anchor:{ident}:{aid}")
+            absent = [needle for needle in all_of if not _anchor_match(low, needle)]
+            if absent:
+                missing.append(
+                    f"section_anchor:{ident}:{aid}(needs all of: {', '.join(str(n) for n in absent)})"
+                )
+    return missing
 
 
 def find_lang_marker(inner: str, prefix: str) -> str | None:
@@ -252,8 +375,35 @@ def contract_root_errors(contract: object) -> list[str]:
 
 
 def check_contract_baseline(contract: dict) -> list[str]:
-    """契约只允许在基线之上收紧，不许把规则条数、锚点或声明字段悄悄改松。"""
+    """契约只允许在基线之上收紧，不许把规则条数、锚点、章节哈希或声明字段悄悄改松。"""
     missing: list[str] = []
+    critical = contract.get("critical_sections", [])
+    if not isinstance(critical, list):
+        missing.append("critical_sections(not_list)")
+        critical = []
+    items = {str(item.get("id", "")): item for item in critical if isinstance(item, dict)}
+    for ident, pinned in CANONICAL_SECTION_SHA256.items():
+        item = items.get(ident)
+        if item is None:
+            missing.append(f"critical_sections:{ident}")
+            continue
+        headings = item.get("headings")
+        if not isinstance(headings, list) or not headings or not all(
+            isinstance(heading, str) and heading.strip() for heading in headings
+        ):
+            missing.append(f"critical_sections_headings:{ident}(invalid)")
+        if str(item.get("sha256", "")).lower() != pinned:
+            missing.append(f"critical_sections_hash:{ident}")
+        try:
+            floor = int(item.get("min_chars", 0) or 0)
+        except (TypeError, ValueError, OverflowError):
+            floor = 0
+        if floor < CANONICAL_SECTION_FLOORS[ident]:
+            missing.append(
+                f"critical_sections_floor:{ident}({floor}<{CANONICAL_SECTION_FLOORS[ident]})"
+            )
+        if id_set(item.get("anchors")) != CANONICAL_SECTION_ANCHORS[ident]:
+            missing.append(f"critical_sections_anchors:{ident}")
     missing += contract_anchor_errors(contract.get("rule_anchors"), "rule_anchors")
     missing += contract_anchor_errors(contract.get("must_have"), "must_have")
     try:
@@ -414,6 +564,12 @@ def main() -> int:
     notes += fm_notes
 
     missing += check_anchors(text, contract.get("must_have", []), "anchor")
+
+    # 第 5 道闸：正典 SKILL.md 的关键章节正文哈希（与代码内置基线互锁，静默改写章节即 FAIL）。
+    primary_file = os.path.normcase(os.path.abspath(
+        os.path.join(base, block_cfg.get("canonical_file", "SKILL.md"))))
+    if os.path.normcase(os.path.abspath(args.file)) == primary_file:
+        missing += check_critical_sections(text, contract.get("critical_sections", []), True)
 
     if not (args.canonical or is_ref):
         missing += check_declaration(text, contract.get("declaration", {}))

@@ -199,3 +199,78 @@ class TestRepoScanDedupe(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
+class TestCriticalSections(unittest.TestCase):
+    """1.2.13：关键章节正文只有"关键词"不算过，正文哈希与代码基线双锁。"""
+
+    def setUp(self):
+        self.verify = _load(VERIFY, "rbb_verify_sections")
+
+    def _contract(self):
+        with open(CONTRACT, encoding="utf-8") as fh:
+            return json.load(fh)
+
+    def _skill(self):
+        with open(os.path.join(ROOT, "SKILL.md"), encoding="utf-8") as fh:
+            return fh.read()
+
+    def test_shipped_contract_pins_every_section(self):
+        contract = self._contract()
+        self.assertEqual(contract["version"], 4)
+        self.assertEqual(
+            {item["id"] for item in contract["critical_sections"]},
+            set(self.verify.CANONICAL_SECTION_SHA256),
+        )
+        self.assertEqual(self.verify.check_contract_baseline(contract), [])
+
+    def test_shipped_skill_matches_pinned_sections(self):
+        contract = self._contract()
+        self.assertEqual(
+            self.verify.check_critical_sections(
+                self._skill(), contract["critical_sections"], True
+            ),
+            [],
+        )
+
+    def test_one_extra_sentence_in_a_section_is_rejected(self):
+        contract = self._contract()
+        text = self._skill()
+        tampered = text.replace(
+            "**Modifiability gate, before any Join verdict.**",
+            "**Modifiability gate, before any Join verdict.** 这一句原文没有。",
+            1,
+        )
+        self.assertNotEqual(tampered, text)
+        self.assertIn(
+            "section_hash:step2",
+            self.verify.check_critical_sections(tampered, contract["critical_sections"], True),
+        )
+
+    def test_body_and_contract_hash_rewritten_together_are_rejected(self):
+        contract = self._contract()
+        contract["critical_sections"][0]["sha256"] = "0" * 64
+        self.assertIn(
+            "critical_sections_hash:step2",
+            self.verify.check_contract_baseline(contract),
+        )
+
+    def test_dropped_section_or_relaxed_floor_is_rejected(self):
+        contract = self._contract()
+        del contract["critical_sections"][0]
+        self.assertIn("critical_sections:step2", self.verify.check_contract_baseline(contract))
+        contract = self._contract()
+        contract["critical_sections"][2]["min_chars"] = 1
+        self.assertIn(
+            "critical_sections_floor:hard_constraints(1<350)",
+            self.verify.check_contract_baseline(contract),
+        )
+
+    def test_section_hash_is_crlf_safe(self):
+        contract = self._contract()
+        crlf = self._skill().replace("\n", "\r\n")
+        self.assertEqual(
+            self.verify.check_critical_sections(crlf, contract["critical_sections"], True),
+            [],
+        )
