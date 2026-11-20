@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.14 — 2026-11-20
+
+按 issue #9 增加完整档的收尾记录，不改四段交付和不变量块。
+
+- **Step 5 — Record**：`SKILL.md` 在 Step 4 后新增技术栈与许可证清单；列为组件、版本、SPDX 许可、使用方式、义务、来源。许可证只从 `LICENSE` / 包元数据读取，义务取自 `repo-triage.md` 的“许可证速查”。
+- **中英同步**：`references/zh-guide.md` 增加同一节，目录补第 5 步。
+- **NOTICE 规则**：拷贝或改写代码时创建/更新 `NOTICE` / `THIRD_PARTY_NOTICES`；普通依赖和仅参考条目通常不触发。
+- **回归测试**：`tests/test_cross_file_consistency.py` 新增 `TestRecordLedgerContract`，锁住中英标题、六列表头和 `THIRD_PARTY_NOTICES`。
+- 测试 104（1 条发布快照测试在打 tag 前跳过，另有 26 subtests），Ruff 全绿；版本号同步到 `1.2.14`（`SKILL.md`、四个脚本、README、CHANGELOG）。
+
 ## 1.2.13 — 2026-11-16
 
 补 1.2.12 留下的校验盲区：关键章节正文此前只查关键词，正文被静默改写也照样 PASS。

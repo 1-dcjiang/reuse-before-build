@@ -55,6 +55,30 @@ class TestCrossFileVerdicts(unittest.TestCase):
         self.assertIn("可改性为“红”但许可允许", self.triage)
 
 
+class TestRecordLedgerContract(unittest.TestCase):
+    """Step 5 的清单表头必须在中英两版同时存在；只改一边时这里会红。"""
+
+    def test_both_editions_carry_record_step_and_columns(self):
+        en = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        zh = (ROOT / "references" / "zh-guide.md").read_text(encoding="utf-8")
+
+        self.assertIn("## Step 5 — Record", en)
+        self.assertIn("## 第 5 步：记录", zh)
+        self.assertIn("Full lane only", en)
+        self.assertIn("仅完整档", zh)
+
+        for column in (
+            "Component", "Version", "Licence (SPDX)",
+            "How used", "Obligations", "Source",
+        ):
+            self.assertIn(column, en)
+        for column in ("组件", "版本", "许可证（SPDX）", "使用方式", "义务", "来源"):
+            self.assertIn(column, zh)
+
+        self.assertIn("THIRD_PARTY_NOTICES", en)
+        self.assertIn("THIRD_PARTY_NOTICES", zh)
+
+
 class TestUntrustedAnchors(unittest.TestCase):
     def test_all_localization_targets_carry_untrusted_anchors(self):
         contract = (ROOT / "localization.contract.json").read_text(encoding="utf-8")
