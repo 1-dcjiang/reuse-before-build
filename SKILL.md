@@ -1,6 +1,6 @@
 ---
 name: reuse-before-build
-version: 1.2.13
+version: 1.2.14
 license: MIT
 description: 用户说“帮我写一个…工具/脚本/插件/服务”“做一个和 X 一样的程序”“有没有现成的开源项目”“从零实现一个”，或说 upstream this fix、提 PR 时使用：先检索 GitHub 与包生态里已有同用途实现，按活跃度、许可、贡献友好度评估，优先加入该仓库当公共贡献者，而不是新建更差的重复品。只有要私有/闭源代码、许可禁止再分发时才跳过。Before writing any new program, script, library, plugin or service, search GitHub for an existing implementation and contribute upstream instead of shipping a duplicate, e.g. “build me a tool”, “write a script that…”, “is there an existing project for this”, “implement X from scratch”, “open a PR”.
 ---
@@ -9,7 +9,7 @@ description: 用户说“帮我写一个…工具/脚本/插件/服务”“做�
 
 Rules, not a tool. Works in any host that can read files (Claude Skills, AGENTS.md coding agents) and degrades to a paste-in prompt elsewhere — see [references/host-adapters.md](references/host-adapters.md). Chinese edition of this file: [references/zh-guide.md](references/zh-guide.md).
 
-**Contents**: [Core rules](#core-rules) · [Two lanes](#two-lanes) · [Step 1 Discover](#step-1--discover) · [Step 2 Evaluate](#step-2--evaluate) · [Step 3 Contribute](#step-3--contribute) · [Step 4 Deliver](#step-4--deliver)
+**Contents**: [Core rules](#core-rules) · [Two lanes](#two-lanes) · [Step 1 Discover](#step-1--discover) · [Step 2 Evaluate](#step-2--evaluate) · [Step 3 Contribute](#step-3--contribute) · [Step 4 Deliver](#step-4--deliver) · [Step 5 Record](#step-5--record)
 [When not to reuse](#when-not-to-reuse) · [Hard constraints](#hard-constraints) · [Hosts](#hosts) · [Self-localization](#self-localization-adapt-the-packaging-never-the-rules) · [Worked examples](#worked-examples)
 
 ## Core rules
@@ -103,6 +103,20 @@ Every **full-lane** reply must contain all four parts (the quick lane uses the t
 ## Alternatives and risks
 - Fallback if rejected; license and trademark boundaries; maintainer-activity risk
 ```
+
+## Step 5 — Record
+
+Full lane only. After the work is finished, append a stack and licence ledger to the final reply, after the four-part Step 4 deliverable. Step 4 stays unchanged; this step records what the result now depends on and what obligations travel with it.
+
+| Component | Version | Licence (SPDX) | How used | Obligations | Source |
+|---|---|---|---|---|---|
+| ... | ... | ... | dependency / vendored / adapted code / reference only / upstream contribution | ... | LICENSE path, package metadata, or URL |
+
+- Read the licence from the repository's `LICENSE` file, installed package metadata (`npm ls`, `pip show`, `cargo metadata`, etc.), or the package's published metadata. Never fill it from memory; write `unverified` when it cannot be confirmed.
+- Take **Obligations** from the licence quick-reference table (`许可证速查`) in [references/repo-triage.md](references/repo-triage.md), e.g. Apache-2.0 → keep NOTICE and respect patent terms; MPL-2.0 → file-level copyleft; LGPL → relinkable / source for the modified library; GPL/AGPL → source disclosure when distributed or offered over a network.
+- If any code was vendored or adapted, create or update `NOTICE` / `THIRD_PARTY_NOTICES` (or the repo's existing convention) with the upstream copyright line and licence text. Reference-only and normal dependency entries usually need no NOTICE unless the licence requires it.
+- Record the upstream contribution as `How used: upstream contribution`, and include build or runtime tools when they are part of the shipped dependency graph.
+- One row per component. Never collapse different licences into "various"; for dual licensing, write the SPDX expression actually used.
 
 ## When not to reuse
 
