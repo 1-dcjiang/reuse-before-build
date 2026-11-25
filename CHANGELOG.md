@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.15 — 2026-11-25
+
+补上“先判断能不能做出更好的底层”的前置判断，避免只因为上层功能缺失就绕开健康上游、另造同功能项目。
+
+- **Core rules 第 6 条**：Join 前先判断核心层能否实质性改进；只是上层缺功能就补上游；底层确实限制方向且可改性为绿/黄，就把底层改进提成上游 PR（必要时单独开小重构 PR）；底层为红或方向/许可不允许才 Fork/Build；禁止拿“更好的底层”当借口复制健康上游。
+- **中英同步**：`references/zh-guide.md` 与 `README.md` 的规则列表同步为六条；`references/host-adapters.md` 中英精简提示同步加入该判断。
+- **契约/校验**：`localization.contract.json` version 4→5，`rules_min` 5→6，新增 `rule_6` 锚点，canonical sha256 更新；`verify_localized.py` 常量同步。
+- **提示词登记**：`prompt-digests.json` 重新生成，中英精简版登记为 p3 / v1.2.15。
+- **回归测试**：`tests/test_cross_file_consistency.py` 新增 `TestFoundationCheck`，锁住中英正典与两段精简提示。
+- 测试 105 passed、1 skipped、26 subtests，Ruff（CI 口径）全绿；版本号同步到 `1.2.15`（`SKILL.md`、四个脚本、README、CHANGELOG）。
+
 ## 1.2.14 — 2026-11-20
 
 按 issue #9 增加完整档的收尾记录，不改四段交付和不变量块。

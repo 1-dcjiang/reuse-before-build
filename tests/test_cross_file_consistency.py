@@ -101,5 +101,19 @@ class TestUntrustedAnchors(unittest.TestCase):
         self.assertIn("ignore previous rules", triage)
 
 
+class TestFoundationCheck(unittest.TestCase):
+    """1.2.15：先判断能不能做出更好的底层，必须同时出现在中英正典与两段精简提示里。"""
+
+    def test_rule_in_both_editions_and_condensed_prompts(self):
+        en = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        zh = (ROOT / "references" / "zh-guide.md").read_text(encoding="utf-8")
+        adapters = (ROOT / "references" / "host-adapters.md").read_text(encoding="utf-8")
+
+        self.assertIn("Foundation check before you Join", en)
+        self.assertIn("先判断能不能做出更好的底层", zh)
+        self.assertIn("先判断核心层能不能做得更好", adapters)
+        self.assertIn("check whether its core layer can be materially improved", adapters)
+
+
 if __name__ == "__main__":
     unittest.main()

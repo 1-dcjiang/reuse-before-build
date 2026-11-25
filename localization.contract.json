@@ -1,14 +1,14 @@
 {
-  "version": 4,
+  "version": 5,
   "block": {
     "begin": "RBB:INVARIANTS:BEGIN",
     "end": "RBB:INVARIANTS:END",
     "lang_marker_prefix": "RBB:INVARIANTS:LANG:",
     "canonical_file": "SKILL.md",
-    "canonical_sha256": "690f0165e1f67fbb771a68c5456dcd35243e1132cfa0b0b9f287caf446143526",
+    "canonical_sha256": "16ade90378c4820688f8c3a3851d443a7c8d4f2699cf65e916eea5bcc800ac81",
     "canonical_files": ["SKILL.md", "references/zh-guide.md"]
   },
-  "rules_min": 5,
+  "rules_min": 6,
   "rule_anchors": [
     {
       "id": "rule_1",
@@ -29,6 +29,10 @@
     {
       "id": "rule_5",
       "any": ["Code gate", "门禁先于代码"]
+    },
+    {
+      "id": "rule_6",
+      "any": ["Foundation check before you Join", "先判断能不能做出更好的底层"]
     }
   ],
   "must_have": [

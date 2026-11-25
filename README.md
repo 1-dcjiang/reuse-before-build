@@ -1,6 +1,6 @@
 # reuse-before-build
 
-**Version 1.2.14** · MIT · [CHANGELOG](CHANGELOG.md)
+**Version 1.2.15** · MIT · [CHANGELOG](CHANGELOG.md)
 
 > An AI agent skill: **before writing a new program, search for the existing open-source implementation and join that repo as a public contributor — instead of shipping a worse duplicate.**
 
@@ -22,7 +22,7 @@ Ask for "a tool that cuts long videos into shorts" and the model writes a 1,400-
 
 Exact rule-file names and character budgets per host: [`references/host-adapters.md`](references/host-adapters.md). 中文版见下方。
 
-[The problem](#the-problem-it-fixes) · [Rules](#five-core-rules) · [Decision path](#decision-path) · [Contents](#contents) · [Install](#install) · [Quick start](#quick-start) · [中文](#先复用再新建中文)
+[The problem](#the-problem-it-fixes) · [Rules](#six-core-rules) · [Decision path](#decision-path) · [Contents](#contents) · [Install](#install) · [Quick start](#quick-start) · [中文](#先复用再新建中文)
 
 ## The problem it fixes
 
@@ -34,13 +34,14 @@ The most common AI failure is not "can't write code" — it is **writing a worse
 
 This skill makes "search → evaluate → contribute → build last" an executable procedure, and puts a **code gate** in front of the default reflex to start scaffolding.
 
-## Five core rules
+## Six core rules
 
 1. Assume it already exists until searching proves otherwise.
 2. The default outcome is joining an existing public repo, not creating a new one.
 3. Prove non-reusability before building new — license, direction, maintenance, requirement mismatch.
 4. Contribution must be genuinely useful; no typo/formatting PR farming.
 5. Code gate: candidates and a first concrete action come before any scaffold.
+6. Foundation check before Join: ask whether the candidate's core layer can be materially improved; if so and the repo is green/yellow, upstream that core improvement instead of duplicating a healthy project.
 
 ## Decision path
 
@@ -205,7 +206,7 @@ MIT, see [LICENSE](LICENSE).
 
 # 先复用，再新建（中文）
 
-**版本 1.2.14** · MIT · [变更记录](CHANGELOG.md)
+**版本 1.2.15** · MIT · [变更记录](CHANGELOG.md)
 
 > 一个面向 AI 编程助手的 Skill：**在写新程序之前，先去找已经存在的公开实现，并优先加入那个仓库、成为公共贡献者，而不是从零再造一个。**
 
@@ -215,13 +216,14 @@ MIT, see [LICENSE](LICENSE).
 
 AI 现在最常见的失败不是"写不出代码"，而是**在别人已经做过的地方，从零写了一个更差的版本**。这个 Skill 把"先检索、再评估、再贡献、最后才新建"固化成流程，并用**门禁**挡住"直接开写"这个默认行为。
 
-## 五条核心规则
+## 六条核心规则
 
 1. 默认假设"已经有人做过"，直到检索证明没有。
 2. 默认目标是加入已有公开仓库，而不是新建仓库。
 3. 先证明不可复用，才允许新建，理由必须写清（许可 / 方向 / 维护状态 / 需求差异）。
 4. 贡献必须真的有用——不为"成为作者"刷低价值 PR。
 5. 门禁先于代码：给出候选清单与第一个可执行贡献动作之前，不得输出完整新项目脚手架。
+6. 先判断能不能做出更好的底层：核心层确实可改进且可改性为绿/黄时，把改进提成上游 PR，而不是绕开健康上游另造同功能项目。
 
 ## 判断路径
 
