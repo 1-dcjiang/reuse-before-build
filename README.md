@@ -1,6 +1,6 @@
 # reuse-before-build
 
-**Version 1.2.15** · MIT · [CHANGELOG](CHANGELOG.md)
+**Version 1.2.16** · MIT · [CHANGELOG](CHANGELOG.md)
 
 > An AI agent skill: **before writing a new program, search for the existing open-source implementation and join that repo as a public contributor — instead of shipping a worse duplicate.**
 
@@ -41,7 +41,7 @@ This skill makes "search → evaluate → contribute → build last" an executab
 3. Prove non-reusability before building new — license, direction, maintenance, requirement mismatch.
 4. Contribution must be genuinely useful; no typo/formatting PR farming.
 5. Code gate: candidates and a first concrete action come before any scaffold.
-6. Foundation check before Join: ask whether the candidate's core layer can be materially improved; if so and the repo is green/yellow, upstream that core improvement instead of duplicating a healthy project.
+6. Foundation check before Join: a green core that blocks the direction gets an upstream core PR; a yellow core is never touched — Extend behind the seam and let the verdict table decide Fork/Build if the seam cannot carry the requirement; a red core is never Join. It refines the verdict, not replaces it.
 
 ## Decision path
 
@@ -206,7 +206,7 @@ MIT, see [LICENSE](LICENSE).
 
 # 先复用，再新建（中文）
 
-**版本 1.2.15** · MIT · [变更记录](CHANGELOG.md)
+**版本 1.2.16** · MIT · [变更记录](CHANGELOG.md)
 
 > 一个面向 AI 编程助手的 Skill：**在写新程序之前，先去找已经存在的公开实现，并优先加入那个仓库、成为公共贡献者，而不是从零再造一个。**
 
@@ -223,7 +223,7 @@ AI 现在最常见的失败不是"写不出代码"，而是**在别人已经做�
 3. 先证明不可复用，才允许新建，理由必须写清（许可 / 方向 / 维护状态 / 需求差异）。
 4. 贡献必须真的有用——不为"成为作者"刷低价值 PR。
 5. 门禁先于代码：给出候选清单与第一个可执行贡献动作之前，不得输出完整新项目脚手架。
-6. 先判断能不能做出更好的底层：核心层确实可改进且可改性为绿/黄时，把改进提成上游 PR，而不是绕开健康上游另造同功能项目。
+6. 先判断能不能做出更好的底层：绿档才把底层改进提成上游 PR；黄档不碰内核，只隔稳定接入口 Extend，适配层扛不住需求时由判定表决定 Fork/Build；红档不 Join。这条只细化判决，不替代六维打分和判定表。
 
 ## 判断路径
 

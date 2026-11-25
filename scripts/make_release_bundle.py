@@ -26,7 +26,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-__version__ = "1.2.15"
+__version__ = "1.2.16"
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent

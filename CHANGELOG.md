@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.16 — 2026-11-25
+
+修正 1.2.15 第 6 条与可改性硬闸的冲突：原文允许黄档改内核，并把 Fork/Build 限得过死。
+
+- **Rule 6 收紧**：绿档才把底层改进提成上游 PR；黄档不碰内核，只隔稳定接入口 Extend，适配层扛不住需求时由判定表决定 Fork/Build；红档一律不 Join。明确该判断只细化判决，不替代六维打分与判定表。
+- **同步**：`references/zh-guide.md`、`README.md`、`references/host-adapters.md` 中英精简提示同步；`localization.contract.json` version 5→6、canonical hash 更新；`prompt-digests.json` 登记 p4 / v1.2.16。
+- **回归断言**：`TestFoundationCheck` 增加“黄档不碰内核”与“只细化判决、不替代判定表”的锁定。
+- 测试 105 passed、1 skipped、26 subtests，Ruff（CI 口径）全绿；版本号同步到 `1.2.16`（`SKILL.md`、四个脚本、README、CHANGELOG）。
+
 ## 1.2.15 — 2026-11-25
 
 补上“先判断能不能做出更好的底层”的前置判断，避免只因为上层功能缺失就绕开健康上游、另造同功能项目。

@@ -97,7 +97,7 @@
 1. 先假设"已经有人做过"，直到检索证明没有。禁止先写雏形再找参考。
 2. 检索至少三轮：① GitHub 仓库/代码搜索（带 stars、language、pushed 限定符，关键词要翻成英文并做同义扩展）；② 包管理器与框架插件市场（npm/PyPI/crates/官方插件目录/awesome-list）；③ 在候选仓库的 issue 里查是否已有人提过同样需求、维护者是否回过"PR welcome"。
 3. 给出 3–6 个候选，并按"活跃度 / 维护者响应 / 许可证 / 贡献友好度 / 需求匹配度 / 工程质量"打分排序。
-4. 默认结论是"加入这个仓库成为贡献者"，而不是新建仓库。按这个优先级选择：合并进上游（Join）→ 做官方插件/扩展（Extend）→ fork 改进并回提上游（Fork）→ 都不成立才新建（Build）。在 Join 前先判断核心层能不能做得更好：只是上层缺功能就补上游；底层确实限制方向且可改性为绿/黄，就把底层改进提成上游 PR；不要用"更好的底层"当借口重造健康上游。
+4. 默认结论是"加入这个仓库成为贡献者"，而不是新建仓库。按这个优先级选择：合并进上游（Join）→ 做官方插件/扩展（Extend）→ fork 改进并回提上游（Fork）→ 都不成立才新建（Build）。在 Join 前先判断核心层能不能做得更好：只是上层缺功能就补上游；底层确实限制方向时，绿档把底层改进提成上游 PR，黄档不碰内核、只隔适配层 Extend，红档不 Join。不要用"更好的底层"当借口重造健康上游。
 5. 只有在用户要求私有闭源、许可证不允许、需求方向相反、维护者已弃坑等情况下才允许新建，且必须书面说明理由。
 6. 贡献前先读 CONTRIBUTING、PR 模板与最近合并的 PR；功能改动先开 issue 问维护者，bug 可直接提 PR；PR 保持单一目的、带测试、带文档。
 7. 不虚构仓库名、star 数、许可证；无法联网时输出可复制的检索清单并说明无法核实。不为刷贡献提交低价值 PR，不把私有代码贴到公开 issue。
@@ -116,7 +116,7 @@ Rules:
 1. Assume someone already built it until searching proves otherwise. Never draft first and look for references later.
 2. Run three rounds of search: (a) GitHub repo and code search with qualifiers (stars, language, pushed, topic), expanding keywords into English synonyms; (b) package registries and framework plugin markets (npm, PyPI, crates.io, official extension directories, awesome-lists); (c) the candidate repos' issues, to find whether the same request was already filed and whether maintainers replied "PR welcome".
 3. Return 3–6 candidates ranked on activity, maintainer responsiveness, license compatibility, contribution friendliness, requirement fit, and code quality.
-4. Default to joining an existing repo as a contributor, not creating a new one. Choose in this order: upstream it (Join) → ship it as an official plugin/extension (Extend) → fork and PR back (Fork) → build new only if none of these hold (Build). Before joining, check whether its core layer can be materially improved: add the missing feature upstream if the gap is upstairs; if the foundation blocks the direction and the repo is green/yellow, send the core improvement as an upstream PR. Do not use "better foundation" as an excuse to duplicate a healthy upstream.
+4. Default to joining an existing repo as a contributor, not creating a new one. Choose in this order: upstream it (Join) → ship it as an official plugin/extension (Extend) → fork and PR back (Fork) → build new only if none of these hold (Build). Before joining, check whether its core layer can be materially improved: add the missing feature upstream if the gap is upstairs; if the foundation blocks the direction, upstream a core PR on a green repo, keep a yellow repo's core untouched and Extend behind the seam, and never Join a red one. Do not use "better foundation" as an excuse to duplicate a healthy upstream.
 5. Build new only when the user requires private/closed source, the license forbids the use, the repo's direction is explicitly opposite, or the project is abandoned. State the reason in writing.
 6. Before contributing, read CONTRIBUTING, the PR template, and recently merged PRs. Open an issue first for features; small bug fixes may go straight to PR. Keep PRs single-purpose, tested and documented.
 7. Never invent repo names, star counts or licenses. If you cannot browse, output a copy-paste search checklist and say you could not verify. Do not spam low-value PRs and never paste private user code into public issues.

@@ -1,11 +1,11 @@
 {
-  "version": 5,
+  "version": 6,
   "block": {
     "begin": "RBB:INVARIANTS:BEGIN",
     "end": "RBB:INVARIANTS:END",
     "lang_marker_prefix": "RBB:INVARIANTS:LANG:",
     "canonical_file": "SKILL.md",
-    "canonical_sha256": "16ade90378c4820688f8c3a3851d443a7c8d4f2699cf65e916eea5bcc800ac81",
+    "canonical_sha256": "4c6a5346ff8f9c9f799f4cb00deba87012059598d8f24864b1bfdab8fef60894",
     "canonical_files": ["SKILL.md", "references/zh-guide.md"]
   },
   "rules_min": 6,
