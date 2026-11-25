@@ -9,6 +9,12 @@
       "source": "references/host-adapters.md",
       "versions": [
         {
+          "version": "p4",
+          "sha256": "45c3642e4110f9c2f1141c94c0818816ec1284b62161fdc965251ea44c976170",
+          "chars": 881,
+          "released": "v1.2.16"
+        },
+        {
           "version": "p3",
           "sha256": "e1dd52d16e3bb2ed56e62c0e5498bfd672af18066c135691ed1059ea6120d573",
           "chars": 858,
@@ -33,6 +39,12 @@
       "label": "Condensed prompt (English, ~250 words)",
       "source": "references/host-adapters.md",
       "versions": [
+        {
+          "version": "p4",
+          "sha256": "e240baff04f4d846fc7df11420310902f5b4a8fff247c57f1fdb77484a31a039",
+          "chars": 2525,
+          "released": "v1.2.16"
+        },
         {
           "version": "p3",
           "sha256": "ae115c42d19b0d9a043cbd5d2f87fba05b53ffaa1d1e5a4b00b9aea2f5d4e438",
@@ -59,10 +71,10 @@
       "source": "references/host-adapters.md",
       "versions": [
         {
-          "version": "p3",
+          "version": "p4",
           "sha256": "39c9f4c2fd5ec9f9ec66f260260ea4197742639183b4f15d0dfd0affa7f4e8c5",
           "chars": 119,
-          "released": "v1.2.15"
+          "released": "v1.2.16"
         }
       ]
     },
@@ -72,10 +84,10 @@
       "source": "references/host-adapters.md",
       "versions": [
         {
-          "version": "p3",
+          "version": "p4",
           "sha256": "194851ea4a48e7caafbd178f0739f3848749183d68008837c266574bad8f320e",
           "chars": 578,
-          "released": "v1.2.15"
+          "released": "v1.2.16"
         }
       ]
     }

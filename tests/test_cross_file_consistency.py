@@ -102,7 +102,7 @@ class TestUntrustedAnchors(unittest.TestCase):
 
 
 class TestFoundationCheck(unittest.TestCase):
-    """1.2.15：先判断能不能做出更好的底层，必须同时出现在中英正典与两段精简提示里。"""
+    """1.2.15/1.2.16：先判断能不能做出更好的底层，必须同时出现在中英正典与两段精简提示里，并守住黄档不碰内核。"""
 
     def test_rule_in_both_editions_and_condensed_prompts(self):
         en = (ROOT / "SKILL.md").read_text(encoding="utf-8")
@@ -111,6 +111,11 @@ class TestFoundationCheck(unittest.TestCase):
 
         self.assertIn("Foundation check before you Join", en)
         self.assertIn("先判断能不能做出更好的底层", zh)
+        self.assertIn("yellow repo means do not touch the core", en)
+        self.assertIn("黄档不碰内核", zh)
+        self.assertIn("refines the verdict, not replaces it", en)
+        self.assertIn("只细化判决，不替代", zh)
+        self.assertNotIn("green/yellow, make the core improvement", en)
         self.assertIn("先判断核心层能不能做得更好", adapters)
         self.assertIn("check whether its core layer can be materially improved", adapters)
 

@@ -218,7 +218,7 @@ class TestCriticalSections(unittest.TestCase):
 
     def test_shipped_contract_pins_every_section(self):
         contract = self._contract()
-        self.assertEqual(contract["version"], 5)
+        self.assertEqual(contract["version"], 6)
         self.assertEqual(
             {item["id"] for item in contract["critical_sections"]},
             set(self.verify.CANONICAL_SECTION_SHA256),

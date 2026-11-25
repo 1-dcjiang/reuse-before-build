@@ -22,7 +22,7 @@
 
 from __future__ import annotations
 
-__version__ = "1.2.15"
+__version__ = "1.2.16"
 
 import argparse
 import hashlib
@@ -40,7 +40,7 @@ except Exception:
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_CONTRACT = os.path.join(os.path.dirname(HERE), "localization.contract.json")
 # 随包英文正典的基线钉在代码里，不能只相信同目录、同样可被改写的契约。
-CANONICAL_SHA256 = "16ade90378c4820688f8c3a3851d443a7c8d4f2699cf65e916eea5bcc800ac81"
+CANONICAL_SHA256 = "4c6a5346ff8f9c9f799f4cb00deba87012059598d8f24864b1bfdab8fef60894"
 CANONICAL_RULES_MIN = 6
 CANONICAL_RULE_ANCHOR_IDS = frozenset({"rule_1", "rule_2", "rule_3", "rule_4", "rule_5", "rule_6"})
 CANONICAL_MUST_HAVE_IDS = frozenset({
