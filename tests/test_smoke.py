@@ -156,7 +156,7 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(run_mock.call_args.kwargs["env"]["GH_HOST"], "ghe.example.com")
 
     def test_version_is_exposed(self):
-        self.assertEqual(repo_scan.__version__, "1.2.14")
+        self.assertEqual(repo_scan.__version__, "1.2.15")
 
     def test_verify_localized_defines_version_once(self):
         path = os.path.join(ROOT, "scripts", "verify_localized.py")
@@ -164,7 +164,7 @@ class TestHelpers(unittest.TestCase):
             source = fh.read()
         matches = re.findall(r"^__version__\s*=", source, re.MULTILINE)
         self.assertEqual(len(matches), 1)
-        self.assertIn('__version__ = "1.2.14"', source)
+        self.assertIn('__version__ = "1.2.15"', source)
 
     def test_cli_argument_validators(self):
         self.assertEqual(repo_scan._stars_arg("0"), 0)
@@ -617,7 +617,7 @@ class TestVerifier(unittest.TestCase):
         self.assertIn("invariants_hash", p.stdout)
 
     def test_localized_copy_with_declaration_passes(self):
-        line = ("\nlocalized: host=test-host | kept=five rules, gate, verdict order, "
+        line = ("\nlocalized: host=test-host | kept=six rules, gate, verdict order, "
                 "four-part deliverable, hard constraints | changed=none | unsupported=none\n")
         p = self.verify(self._copy_with(self.SKILL, append=line))
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)

@@ -55,7 +55,7 @@ class TestContractBaseline(unittest.TestCase):
         contract["declaration"]["keys"] = ["host"]
         contract["declaration"]["within_last"] = 999
         missing = self.verify.check_contract_baseline(contract)
-        self.assertIn("rules_min:1!=5", missing)
+        self.assertIn("rules_min:1!=6", missing)
         self.assertIn("must_have_ids", missing)
         self.assertIn("declaration_keys", missing)
         self.assertIn("declaration_within_last:999!=8", missing)
@@ -218,7 +218,7 @@ class TestCriticalSections(unittest.TestCase):
 
     def test_shipped_contract_pins_every_section(self):
         contract = self._contract()
-        self.assertEqual(contract["version"], 4)
+        self.assertEqual(contract["version"], 5)
         self.assertEqual(
             {item["id"] for item in contract["critical_sections"]},
             set(self.verify.CANONICAL_SECTION_SHA256),
